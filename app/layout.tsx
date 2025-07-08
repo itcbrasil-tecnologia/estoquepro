@@ -1,13 +1,10 @@
-// ARQUIVO: app/layout.tsx
-// (Substitua o conteúdo deste arquivo)
-// Agora ele irá "envolver" toda a aplicação com o nosso provedor de autenticação.
-
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { config } from '@fortawesome/fontawesome-svg-core';
-import { AuthProvider } from "@/contexts/AuthContext"; // Importa o AuthProvider
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ToastProvider } from "@/contexts/ToastContext";
 
 config.autoAddCss = false; 
 
@@ -26,8 +23,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <AuthProvider> {/* Envolve a aplicação com o contexto */}
-          {children}
+        <AuthProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

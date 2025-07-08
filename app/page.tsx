@@ -1,32 +1,41 @@
-// ARQUIVO: app/page.tsx
-// Esta é a sua nova página de LOGIN (a página inicial).
+'use client';
 
-'use client'; // Necessário para usar hooks como useState
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBoxesStacked } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/estoque');
+    }
+  }, [user, loading, router]);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/estoque'); // Redireciona para a página de estoque após o login
     } catch (err) {
       setError('Email ou senha inválidos.');
       console.error("Erro no login:", err);
     }
   };
+
+  if (loading || user) {
+      return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+  }
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -46,7 +55,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-400 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Email"
               />
             </div>
@@ -58,7 +67,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-400 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Senha"
               />
             </div>

@@ -1,13 +1,9 @@
-// ARQUIVO: app/estoque/layout.tsx
-// (Crie uma nova pasta 'estoque' dentro de 'app' e, nela, crie este arquivo)
-// Este é um layout de segurança. Ele protege todas as páginas dentro de /estoque.
-
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
-import Navbar from '../../components/Navbar';
+import { useAuth } from '@/contexts/AuthContext';
+import Navbar from '@/components/Navbar';
 
 export default function ProtectedLayout({
   children,
@@ -19,7 +15,7 @@ export default function ProtectedLayout({
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/'); // Se não estiver carregando e não houver usuário, redireciona para o login
+      router.push('/');
     }
   }, [user, loading, router]);
 

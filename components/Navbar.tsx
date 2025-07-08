@@ -1,26 +1,31 @@
-// ARQUIVO: components/Navbar.tsx
-// (Crie uma nova pasta 'components' na raiz e, dentro dela, este arquivo)
-// Este é o componente da barra de navegação.
-
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { auth } from '@/lib/firebase'; // Caminho corrigido
+import { useAuth } from '@/contexts/AuthContext'; // Caminho corrigido
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBoxesStacked, faChevronDown, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
 export default function Navbar() {
   const { user, userRole } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/');
+  };
+  
+  const getLinkClass = (path: string) => {
+    return pathname === path ? 'nav-btn-active' : 'nav-btn';
+  };
+  
+  const getCadastrosClass = () => {
+    return pathname.startsWith('/cadastros') ? 'nav-btn-active' : 'nav-btn';
   };
 
   return (
@@ -32,14 +37,14 @@ export default function Navbar() {
             <span className="text-xl font-bold">EstoquePRO</span>
           </Link>
           <div className="hidden md:flex items-center space-x-2">
-            <Link href="/estoque" className="nav-btn-active px-3 py-2 rounded-md text-sm font-medium">Estoque</Link>
-            <Link href="/relatorios" className="nav-btn px-3 py-2 rounded-md text-sm font-medium">Relatórios</Link>
+            <Link href="/estoque" className={`${getLinkClass('/estoque')} px-3 py-2 rounded-md text-sm font-medium`}>Estoque</Link>
+            <Link href="/relatorios" className={`${getLinkClass('/relatorios')} px-3 py-2 rounded-md text-sm font-medium`}>Relatórios</Link>
             <div className="relative">
-              <button onClick={() => setDropdownOpen(!dropdownOpen)} className="nav-btn px-3 py-2 rounded-md text-sm font-medium flex items-center">
+              <button onClick={() => setDropdownOpen(!dropdownOpen)} className={`${getCadastrosClass()} px-3 py-2 rounded-md text-sm font-medium flex items-center`}>
                 Cadastros <FontAwesomeIcon icon={faChevronDown} className="ml-2 text-xs" />
               </button>
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20" onClick={() => setDropdownOpen(false)}>
                   <Link href="/cadastros/localidades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Localidades</Link>
                   <Link href="/cadastros/fornecedores" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Fornecedores</Link>
                   <Link href="/cadastros/categorias" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Categorias</Link>

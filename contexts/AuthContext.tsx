@@ -1,12 +1,7 @@
-// ARQUIVO: contexts/AuthContext.tsx
-// (Crie uma nova pasta 'contexts' na raiz e, dentro dela, este arquivo)
-// Este componente especial vai gerenciar o estado de autenticação (quem está logado)
-// e disponibilizar essa informação para toda a aplicação.
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
@@ -32,7 +27,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(firebaseUser);
           setUserRole(userDoc.data().role);
         } else {
-          // Perfil não encontrado no Firestore, deslogar
           await signOut(auth);
           setUser(null);
           setUserRole(null);
@@ -43,7 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -54,5 +47,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook customizado para usar o contexto de autenticação facilmente
 export const useAuth = () => useContext(AuthContext);
