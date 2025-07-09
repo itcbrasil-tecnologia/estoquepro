@@ -20,7 +20,7 @@ interface ModalProdutoProps {
 const initialFormData: Omit<Produto, 'id' | 'createdAt' | 'updatedAt'> = {
     nome: '', unidade: '', descricao: '', foto_url: '', serialNumber: '',
     modelo: '', categoriaId: '', fabricanteId: '', fornecedorId: '',
-    notas_internas: '', documentos: '[]',
+    notas_internas: '', documentos: '[]', estoqueMinimo: 0,
 };
 
 export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, onDelete }: ModalProdutoProps) {
@@ -47,7 +47,8 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const isNumber = e.target.type === 'number';
+    setFormData(prev => ({ ...prev, [name]: isNumber ? Number(value) : value }));
   };
 
   const handleDocChange = (index: number, field: 'nome' | 'link', value: string) => {
@@ -112,8 +113,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
     }
   };
 
-  const popularSelect = (cache: Map<string, {nome: string}> | undefined, placeholder: string) => {
-    if (!cache) return [<option key="" value="">{placeholder}</option>];
+  const popularSelect = (cache: Map<string, {nome: string}>, placeholder: string) => {
     const options = [<option key="" value="">{placeholder}</option>];
     Array.from(cache.entries()).forEach(([id, item]) => {
         options.push(<option key={id} value={id}>{item.nome}</option>);
@@ -131,6 +131,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Serial Number</label><input type="text" name="serialNumber" value={formData.serialNumber || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Unidade</label><input type="text" name="unidade" value={formData.unidade || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Modelo</label><input type="text" name="modelo" value={formData.modelo || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Estoque Mínimo</label><input type="number" name="estoqueMinimo" value={formData.estoqueMinimo || 0} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label><select name="categoriaId" value={formData.categoriaId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">{popularSelect(caches.categorias, 'Selecione...')}</select></div>
             <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fabricante</label><select name="fabricanteId" value={formData.fabricanteId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">{popularSelect(caches.fabricantes, 'Selecione...')}</select></div>
             <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fornecedor</label><select name="fornecedorId" value={formData.fornecedorId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">{popularSelect(caches.fornecedores, 'Selecione...')}</select></div>

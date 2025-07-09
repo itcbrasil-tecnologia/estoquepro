@@ -76,14 +76,14 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
             <p className="text-center text-gray-500 dark:text-gray-400 p-4">Nenhum histórico de movimentação para este produto.</p>
           ) : (
             <table className="min-w-full bg-white dark:bg-gray-800 text-sm text-left text-gray-700 dark:text-gray-300">
-              <thead className="bg-gray-50 dark:bg-gray-700 text-xs uppercase">
+              <thead className="bg-gray-200 dark:bg-gray-700 text-xs uppercase">
                 <tr>
-                  <th className="py-3 px-4 font-medium">Data</th>
-                  <th className="py-3 px-4 font-medium">Tipo</th>
-                  <th className="py-3 px-4 font-medium text-right">Qtd</th>
-                  <th className="py-3 px-4 font-medium">Origem</th>
-                  <th className="py-3 px-4 font-medium">Destino</th>
-                  <th className="py-3 px-4 font-medium">Usuário</th>
+                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Data</th>
+                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Tipo</th>
+                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-right">Qtd</th>
+                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Origem</th>
+                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Destino</th>
+                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Usuário</th>
                 </tr>
               </thead>
               <tbody className="divide-y dark:divide-gray-700">

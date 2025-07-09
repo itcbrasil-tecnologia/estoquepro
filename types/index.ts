@@ -13,6 +13,7 @@ export interface Produto {
   fornecedorId?: string;
   notas_internas?: string;
   documentos?: string; // JSON string
+  estoqueMinimo?: number;
   createdAt?: FieldValue;
   updatedAt?: FieldValue;
 }

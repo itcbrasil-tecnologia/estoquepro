@@ -10,18 +10,17 @@ interface RelatorioProps {
 export default function RelatorioEstoquePorLocal({ caches }: RelatorioProps) {
   const [localId, setLocalId] = useState('');
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLocalId(e.target.value);
-    e.target.classList.toggle('filter-active', !!e.target.value);
-  };
-
   const estoqueNoLocal = localId ? caches.estoque.filter((item) => item.localidadeId === localId && item.quantidade > 0) : [];
 
   return (
     <div>
       <div className="mb-4">
         <label htmlFor="relatorio-local-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Selecione uma Localidade</label>
-        <select id="relatorio-local-select" onChange={handleSelectChange} className="mt-1 block w-full md:w-1/3 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white">
+        <select 
+          id="relatorio-local-select" 
+          onChange={(e) => setLocalId(e.target.value)} 
+          className="mt-1 block w-full md:w-1/3 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+        >
           <option value="">Selecione...</option>
           {Array.from(caches.localidades.entries()).map(([id, local]: [string, Localidade]) => (
             <option key={id} value={id}>{local.nome}</option>
@@ -35,7 +34,7 @@ export default function RelatorioEstoquePorLocal({ caches }: RelatorioProps) {
           <p className="text-gray-500 dark:text-gray-400">Nenhum produto encontrado neste local.</p>
         ) : (
           <table className="min-w-full text-sm text-left text-gray-700 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-700 text-xs uppercase">
+            <thead className="bg-gray-200 dark:bg-gray-700 text-xs uppercase">
               <tr>
                 <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Produto</th>
                 <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Fabricante</th>

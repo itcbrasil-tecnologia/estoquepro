@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
@@ -15,39 +15,46 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    // Fecha o dropdown quando a rota muda
-    setDropdownOpen(false);
-  }, [pathname]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/');
   };
   
-  // Função para determinar a classe do link com base na página atual
   const getLinkClass = (path: string) => {
     return pathname === path ? 'nav-btn-active' : 'nav-btn';
   };
   
-  // Função específica para o botão de Cadastros
   const getCadastrosClass = () => {
     return pathname.startsWith('/cadastros') ? 'nav-btn-active' : 'nav-btn';
   };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
 
   return (
     <nav className="bg-gray-800 dark:bg-gray-950 shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-3">
-          <Link href="/estoque" className="flex items-center space-x-2">
+          <Link href="/dashboard" className="flex items-center space-x-2">
             <FontAwesomeIcon icon={faBoxesStacked} className="text-2xl text-blue-400" />
             <span className="text-xl font-bold text-white">EstoquePRO</span>
           </Link>
           <div className="hidden md:flex items-center space-x-2">
-            <Link href="/estoque" className={getLinkClass('/estoque')}>Estoque</Link>
+            <Link href="/dashboard" className={getLinkClass('/dashboard')}>Dashboard</Link>
+            <Link href="/estoque" className={getLinkClass('/estoque')}>Produtos</Link>
             <Link href="/relatorios" className={getLinkClass('/relatorios')}>Relatórios</Link>
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button onClick={() => setDropdownOpen(!dropdownOpen)} className={`${getCadastrosClass()} flex items-center`}>
                 Cadastros <FontAwesomeIcon icon={faChevronDown} className="ml-2 text-xs" />
               </button>

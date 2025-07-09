@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/estoque');
+      router.push('/dashboard'); // Redireciona para o Dashboard
     }
   }, [user, loading, router]);
 
@@ -27,6 +27,7 @@ export default function LoginPage() {
     setError('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // O onAuthStateChanged no AuthContext vai lidar com o redirecionamento
     } catch (err) {
       setError('Email ou senha inválidos.');
       console.error("Erro no login:", err);
