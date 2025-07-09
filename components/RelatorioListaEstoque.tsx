@@ -23,25 +23,25 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <select onChange={(e) => setCatFiltro(e.target.value)} className="p-2 border rounded-lg"><option value="">Todas as Categorias</option>{Array.from(caches.categorias.values()).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
-        <select onChange={(e) => setFornFiltro(e.target.value)} className="p-2 border rounded-lg"><option value="">Todos os Fornecedores</option>{Array.from(caches.fornecedores.values()).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>
-        <select onChange={(e) => setLocalFiltro(e.target.value)} className="p-2 border rounded-lg"><option value="">Todas as Localidades</option>{Array.from(caches.localidades.values()).map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select>
+        <select onChange={(e) => setCatFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"><option value="">Todas as Categorias</option>{Array.from(caches.categorias.values()).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+        <select onChange={(e) => setFornFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"><option value="">Todos os Fornecedores</option>{Array.from(caches.fornecedores.values()).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>
+        <select onChange={(e) => setLocalFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-white"><option value="">Todas as Localidades</option>{Array.from(caches.localidades.values()).map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select>
       </div>
-      <table className="min-w-full bg-white text-sm">
-        <thead className="bg-gray-100"><tr>
-            <th className="py-2 px-3 text-left font-medium">Produto</th>
-            <th className="py-2 px-3 text-left font-medium">Categoria</th>
-            <th className="py-2 px-3 text-left font-medium">Fornecedor</th>
-            <th className="py-2 px-3 text-right font-medium">Estoque Total</th>
+      <table className="min-w-full bg-white dark:bg-gray-800 text-sm text-left text-gray-700 dark:text-gray-300">
+        <thead className="bg-gray-50 dark:bg-gray-700 text-xs uppercase"><tr>
+            <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Produto</th>
+            <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Categoria</th>
+            <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Fornecedor</th>
+            <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-right">Estoque Total</th>
         </tr></thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y dark:divide-gray-700">
             {produtosFiltrados.map(p => {
                 const totalEstoque = caches.estoque.filter(e => e.produtoId === p.id).reduce((sum, e) => sum + e.quantidade, 0);
-                return <tr key={p.id}>
-                    <td className="py-2 px-3">{p.nome}</td>
-                    <td className="py-2 px-3">{caches.categorias.get(p.categoriaId ?? '')?.nome || 'N/A'}</td>
-                    <td className="py-2 px-3">{caches.fornecedores.get(p.fornecedorId ?? '')?.nome || 'N/A'}</td>
-                    <td className="py-2 px-3 text-right">{totalEstoque} {p.unidade}</td>
+                return <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <td className="py-3 px-4">{p.nome}</td>
+                    <td className="py-3 px-4">{caches.categorias.get(p.categoriaId ?? '')?.nome || 'N/A'}</td>
+                    <td className="py-3 px-4">{caches.fornecedores.get(p.fornecedorId ?? '')?.nome || 'N/A'}</td>
+                    <td className="py-3 px-4 text-right">{totalEstoque} {p.unidade}</td>
                 </tr>
             })}
         </tbody>

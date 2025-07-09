@@ -1,6 +1,30 @@
-/* ARQUIVO: app/globals.css */
-/* Arquivo de estilos globais, onde o Tailwind é importado. */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+  Estilos customizados para os botões da barra de navegação principal.
+*/
+.nav-btn {
+    @apply px-4 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors;
+}
+
+.nav-btn-active {
+    @apply px-4 py-2 rounded-md text-base font-medium bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-colors;
+}
+
+/*
+  Estilos para os botões de filtro na página de Relatórios.
+*/
+.report-nav-btn {
+    @apply px-4 py-2 rounded-md text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600;
+}
+
+.report-nav-btn-active {
+    @apply px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-colors;
+}
+
+.filter-active {
+    background-color: #e0e7ff; /* Exemplo de cor para filtro ativo */
+    border-color: #4f46e5;
+}

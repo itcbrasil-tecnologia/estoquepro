@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Modal from './Modal';
-import { db } from '@/lib/firebase';
-import { doc, addDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { doc, addDoc, updateDoc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { Produto, CacheData } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 interface ModalProdutoProps {
   isOpen: boolean;
@@ -64,7 +64,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
     setDocumentos(documentos.filter((_, i) => i !== index));
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     
@@ -77,19 +77,43 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
         addToast('Produto atualizado com sucesso!', 'success');
       } else {
         dataToSave.createdAt = serverTimestamp();
-        await addDoc(collection(db, "produtos"), dataToSave);
+        
+        const formElements = e.currentTarget.elements as any;
+        const qtdInicial = parseFloat(formElements.quantidade_inicial.value);
+        const localInicial = formElements.localidade_inicial.value;
+
+        if (qtdInicial > 0 && !localInicial) {
+            throw new Error("Por favor, selecione uma localidade para o estoque inicial.");
+        }
+
+        const batch = writeBatch(db);
+        const produtoRef = doc(collection(db, "produtos"));
+        batch.set(produtoRef, dataToSave);
+
+        if (qtdInicial > 0 && localInicial) {
+            const estoqueRef = doc(collection(db, "estoque"));
+            batch.set(estoqueRef, { produtoId: produtoRef.id, localidadeId: localInicial, quantidade: qtdInicial });
+            
+            const histRef = doc(collection(db, "historico"));
+            batch.set(histRef, {
+                produtoId: produtoRef.id, tipo: 'ENTRADA', quantidade: qtdInicial,
+                localidadeDestinoId: localInicial, data: serverTimestamp(), usuario: auth.currentUser?.uid
+            });
+        }
+        await batch.commit();
         addToast('Produto adicionado com sucesso!', 'success');
       }
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar produto:", error);
-      addToast('Falha ao salvar produto.', 'error');
+      addToast(error.message || 'Falha ao salvar produto.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const popularSelect = (cache: Map<string, {nome: string}>, placeholder: string) => {
+  const popularSelect = (cache: Map<string, {nome: string}> | undefined, placeholder: string) => {
+    if (!cache) return [<option key="" value="">{placeholder}</option>];
     const options = [<option key="" value="">{placeholder}</option>];
     Array.from(cache.entries()).forEach(([id, item]) => {
         options.push(<option key={id} value={id}>{item.nome}</option>);
@@ -100,17 +124,54 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={produtoToEdit ? "Editar Produto" : "Adicionar Novo Produto"}>
       <form onSubmit={handleSave} className="space-y-4">
-        {/* ... (o conteúdo do formulário permanece o mesmo) ... */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label><input type="text" name="nome" value={formData.nome || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label><textarea name="descricao" value={formData.descricao || ''} onChange={handleChange} rows={2} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">URL da Foto</label><input type="url" name="foto_url" value={formData.foto_url || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Serial Number</label><input type="text" name="serialNumber" value={formData.serialNumber || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Unidade</label><input type="text" name="unidade" value={formData.unidade || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Modelo</label><input type="text" name="modelo" value={formData.modelo || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label><select name="categoriaId" value={formData.categoriaId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">{popularSelect(caches.categorias, 'Selecione...')}</select></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fabricante</label><select name="fabricanteId" value={formData.fabricanteId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">{popularSelect(caches.fabricantes, 'Selecione...')}</select></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fornecedor</label><select name="fornecedorId" value={formData.fornecedorId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">{popularSelect(caches.fornecedores, 'Selecione...')}</select></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notas</label><textarea name="notas_internas" value={formData.notas_internas || ''} onChange={handleChange} rows={2} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea></div>
+        </div>
+        <div className="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center mb-2">
+                <p className="text-sm font-bold text-gray-600 dark:text-gray-300">Documentos</p>
+                <button type="button" onClick={addDocumentoField} className="text-sm bg-blue-100 text-blue-700 font-semibold py-1 px-3 rounded-md hover:bg-blue-200">Adicionar</button>
+            </div>
+            <div id="documentosContainer" className="space-y-2">
+                {documentos.map((doc, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                        <input type="text" value={doc.nome} onChange={(e) => handleDocChange(index, 'nome', e.target.value)} placeholder="Nome do Documento" className="w-1/3 p-2 border border-gray-400 rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                        <input type="url" value={doc.link} onChange={(e) => handleDocChange(index, 'link', e.target.value)} placeholder="Link do Documento" className="flex-grow p-2 border border-gray-400 rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                        <button type="button" onClick={() => removeDocumentoField(index)} className="text-red-500 hover:text-red-700 p-2"><FontAwesomeIcon icon={faTrash} /></button>
+                    </div>
+                ))}
+            </div>
+        </div>
+        {!produtoToEdit && (
+            <div className="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-bold text-gray-600 dark:text-gray-300">Estoque Inicial (Opcional)</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                     <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantidade</label><input type="number" step="any" name="quantidade_inicial" className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+                     <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Localidade</label><select name="localidade_inicial" className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">{popularSelect(caches.localidades, 'Selecione...')}</select></div>
+                </div>
+            </div>
+        )}
         <div className="flex justify-between items-center mt-8">
-            {produtoToEdit && (
-                <button type="button" onClick={() => onDelete(produtoToEdit.id)} className="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">
-                    <FontAwesomeIcon icon={faTrash} className="mr-2" />Excluir
-                </button>
-            )}
-            <div className="ml-auto space-x-4">
-                <button type="button" onClick={onClose} className="btn-cancel bg-gray-200 font-bold py-2 px-6 rounded-lg">Cancelar</button>
-                <button type="submit" disabled={loading} className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50">
-                  {loading ? 'Salvando...' : 'Salvar'}
+            <div>
+                {produtoToEdit && (
+                    <button type="button" onClick={() => onDelete(produtoToEdit.id)} className="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">
+                        <FontAwesomeIcon icon={faTrash} className="mr-2" />Excluir
+                    </button>
+                )}
+            </div>
+            <div className="flex items-center gap-x-4">
+                <button type="button" onClick={onClose} className="bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 font-bold py-2 px-6 rounded-lg">Cancelar</button>
+                <button type="submit" disabled={loading} className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 flex items-center justify-center w-28">
+                  {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Salvar'}
                 </button>
             </div>
         </div>

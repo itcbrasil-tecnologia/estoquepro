@@ -12,10 +12,10 @@ import { useToast } from '@/contexts/ToastContext';
 
 export default function PaginaUsuarios() {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { addToast } = useToast();
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'usuarios'), (snapshot) => {
@@ -28,8 +28,6 @@ export default function PaginaUsuarios() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Esta ação desativará o acesso do usuário, mas manterá seu histórico de movimentações. Deseja continuar?")) {
-      // Nota: Esta ação apenas remove o perfil do Firestore, impedindo o login.
-      // A remoção completa do Firebase Auth requer um backend (Admin SDK).
       try {
         await deleteDoc(doc(db, "usuarios", id));
         addToast("Usuário desativado com sucesso.", "success");
@@ -40,28 +38,28 @@ export default function PaginaUsuarios() {
     }
   };
 
-  if (loading) return <p>Carregando...</p>;
+  if (loading) return <p className="dark:text-gray-300">Carregando...</p>;
 
   return (
     <div>
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Gestão de Usuários</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Gestão de Usuários</h1>
         <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center">
           <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Usuário
         </button>
       </header>
-      <div className="bg-white rounded-lg shadow-md">
-        <ul className="divide-y divide-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {usuarios.map(item => (
             <li key={item.id} className="p-4 flex justify-between items-center">
               <div>
-                <span className="font-medium">{item.username}</span>
-                <span className="text-sm text-gray-500 ml-4">{item.email}</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{item.username}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 ml-4">{item.email}</span>
                 <span className={`ml-4 text-xs font-semibold uppercase px-2 py-1 rounded-full ${item.role === 'master' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-800'}`}>{item.role}</span>
               </div>
               {user?.uid !== item.id && (
                 <div className="space-x-4">
-                  <button onClick={() => handleDelete(item.id)} className="text-red-600"><FontAwesomeIcon icon={faTrash} /></button>
+                  <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-500"><FontAwesomeIcon icon={faTrash} /></button>
                 </div>
               )}
             </li>

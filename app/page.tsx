@@ -38,12 +38,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
+    <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <div className="text-center">
-          <FontAwesomeIcon icon={faBoxesStacked} className="text-5xl text-blue-600" />
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">EstoquePRO</h2>
-          <p className="mt-2 text-sm text-gray-600">Acesse sua conta para continuar</p>
+          <FontAwesomeIcon icon={faBoxesStacked} className="text-5xl text-blue-600 dark:text-blue-400" />
+          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">EstoquePRO</h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Acesse sua conta para continuar</p>
         </div>
         <form onSubmit={handleLogin} className="mt-8 space-y-6">
           <div className="rounded-md shadow-sm -space-y-px">
@@ -55,7 +55,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-400 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-400 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700"
                 placeholder="Email"
               />
             </div>
@@ -67,7 +67,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-400 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-400 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700"
                 placeholder="Senha"
               />
             </div>

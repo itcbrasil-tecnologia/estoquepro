@@ -8,8 +8,14 @@ import ModalProduto from '@/components/ModalProduto';
 import ModalDetalhes from '@/components/ModalDetalhes';
 import ModalMovimentar from '@/components/ModalMovimentar';
 import { Produto, CacheData } from '@/types';
+import { useToast } from '@/contexts/ToastContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
 export default function PaginaEstoque() {
+  const { userRole } = useAuth();
+  const { addToast } = useToast();
   const [caches, setCaches] = useState<CacheData>({
     produtos: new Map(), estoque: [], localidades: new Map(),
     fabricantes: new Map(), categorias: new Map(), fornecedores: new Map(),
@@ -28,6 +34,7 @@ export default function PaginaEstoque() {
   useEffect(() => {
     const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico'];
     
+    let loadedCount = 0;
     const unsubscribers = collectionsToListen.map(name => 
       onSnapshot(collection(db, name), (snapshot) => {
         setCaches((prevCaches: CacheData) => {
@@ -41,10 +48,13 @@ export default function PaginaEstoque() {
           }
           return newCache;
         });
+        loadedCount++;
+        if (loadedCount === collectionsToListen.length) {
+            setLoading(false);
+        }
       })
     );
 
-    setLoading(false);
     return () => unsubscribers.forEach(unsub => unsub());
   }, []);
 
@@ -61,12 +71,17 @@ export default function PaginaEstoque() {
   };
 
   const handleDeleteProduto = async (id: string) => {
+    if(userRole !== 'master') {
+        addToast("Apenas administradores podem excluir produtos.", 'error');
+        return;
+    }
+
     const produto = caches.produtos.get(id);
     if (!produto) return;
 
     const totalEstoque = caches.estoque.filter(e => e.produtoId === id).reduce((sum, e) => sum + e.quantidade, 0);
     if (totalEstoque > 0) {
-        alert(`Não é possível excluir "${produto.nome}" porque ainda há ${totalEstoque} ${produto.unidade}(s) em estoque. Zere o estoque antes de excluir.`);
+        addToast(`Não é possível excluir: ainda há ${totalEstoque} ${produto.unidade}(s) em estoque.`, 'error');
         return;
     }
 
@@ -78,24 +93,25 @@ export default function PaginaEstoque() {
         
         try {
             await batch.commit();
+            addToast("Produto excluído com sucesso!", 'success');
             handleCloseModals();
         } catch (error) {
             console.error("Erro ao excluir produto:", error);
-            alert("Ocorreu um erro ao tentar excluir o produto.");
+            addToast("Ocorreu um erro ao tentar excluir o produto.", 'error');
         }
     }
   };
 
   if (loading) {
-    return <p>Carregando produtos...</p>;
+    return <div className="text-center py-10 text-gray-600 dark:text-gray-400">Carregando estoque...</div>;
   }
 
   return (
     <div>
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Visão Geral do Estoque</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Visão Geral do Estoque</h1>
         <button onClick={() => handleOpenModal('add')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center">
-          <i className="fas fa-plus mr-2"></i>Adicionar Produto
+          <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Produto
         </button>
       </header>
       
