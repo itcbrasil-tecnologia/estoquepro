@@ -11,18 +11,9 @@ interface TabelaProps {
 }
 
 export default function TabelaEstoqueBaixo({ produtos, estoque, onDetailsClick }: TabelaProps) {
-  const produtosComEstoqueBaixo = produtos
-    .map(p => {
-      const totalEstoque = estoque
-        .filter(e => e.produtoId === p.id)
-        .reduce((sum, e) => sum + e.quantidade, 0);
-      return { ...p, estoqueAtual: totalEstoque };
-    })
-    .filter(p => p.estoqueAtual < (p.estoqueMinimo || 0));
-
-  if (produtosComEstoqueBaixo.length === 0) {
+  if (produtos.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center">
         <p className="text-gray-500 dark:text-gray-400">Nenhum item com estoque baixo. Tudo em ordem!</p>
       </div>
     );
@@ -40,14 +31,15 @@ export default function TabelaEstoqueBaixo({ produtos, estoque, onDetailsClick }
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-          {produtosComEstoqueBaixo.map(produto => {
-            const estoqueCritico = produto.estoqueAtual <= (produto.estoqueMinimo || 0) / 2;
-            const corEstoque = estoqueCritico ? 'text-red-500 font-bold' : 'text-yellow-500 font-bold';
+          {produtos.map(produto => {
+            const totalEstoque = estoque
+                .filter(e => e.produtoId === produto.id)
+                .reduce((sum, e) => sum + e.quantidade, 0);
 
             return (
               <tr key={produto.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td className="py-3 px-4 font-medium">{produto.nome}</td>
-                <td className={`py-3 px-4 text-center ${corEstoque}`}>{produto.estoqueAtual}</td>
+                <td className="py-3 px-4 text-center font-bold text-red-500">{totalEstoque}</td>
                 <td className="py-3 px-4 text-center">{produto.estoqueMinimo}</td>
                 <td className="py-3 px-4 text-center">
                   <button onClick={() => onDetailsClick(produto)} className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">

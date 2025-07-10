@@ -1,4 +1,4 @@
-'use client'; // ESSENCIAL PARA RESOLVER O ERRO DE BUILD
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBoxesStacked, faExclamationTriangle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import TabelaMovimentacoesRecentes from '@/components/TabelaMovimentacoesRecentes';
 import TabelaEstoqueBaixo from '@/components/TabelaEstoqueBaixo';
+import TabelaEstoqueProximo from '@/components/TabelaEstoqueProximo';
 import ModalDetalhes from '@/components/ModalDetalhes';
 import Modal from '@/components/Modal';
 
