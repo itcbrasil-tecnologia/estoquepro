@@ -50,8 +50,11 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
               {estoqueDoProduto.length > 0 ? estoqueDoProduto.map(item => {
                 const local = caches.localidades.get(item.localidadeId);
                 return (
-                  <div key={item.id} className="flex justify-between text-gray-800 dark:text-gray-200">
-                    <span>{local?.nome || 'Desconhecido'}</span>
+                  <div key={item.id} className="flex justify-between items-center text-gray-800 dark:text-gray-200">
+                    <div className="flex items-center">
+                      <span style={{ backgroundColor: local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
+                      <span>{local?.nome || 'Desconhecido'}</span>
+                    </div>
                     <span className="font-semibold">{item.quantidade} {produto.unidade}</span>
                   </div>
                 )

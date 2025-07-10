@@ -7,12 +7,8 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { CacheData } from '@/types';
 
 // Importe todos os componentes de relatório
-import RelatorioEstoquePorLocal from '@/components/RelatorioEstoquePorLocal';
-import RelatorioMovimentacoes from '@/components/RelatorioMovimentacoes';
 import RelatorioListaEstoque from '@/components/RelatorioListaEstoque';
-import RelatorioListaFabricante from '@/components/RelatorioListaFabricante';
-import RelatorioMovimentacoesUsuario from '@/components/RelatorioMovimentacoesUsuario';
-import RelatorioMovimentacaoPeriodo from '@/components/RelatorioMovimentacaoPeriodo'; // NOVO
+import RelatorioMovimentacoes from '@/components/RelatorioMovimentacoes';
 
 export default function PaginaRelatorios() {
   const { userRole } = useAuth();
@@ -61,11 +57,7 @@ export default function PaginaRelatorios() {
 
     switch (activeReport) {
       case 'listaEstoque': return <RelatorioListaEstoque caches={caches} />;
-      case 'estoquePorLocal': return <RelatorioEstoquePorLocal caches={caches} />;
-      case 'estoquePorFabricante': return <RelatorioListaFabricante caches={caches} />;
       case 'movimentacoes': return <RelatorioMovimentacoes caches={caches} />;
-      case 'movimentacaoPeriodo': return <RelatorioMovimentacaoPeriodo caches={caches} />; // NOVO
-      case 'movimentacoesUsuario': return <RelatorioMovimentacoesUsuario caches={caches} />;
       default: return <p>Selecione um relatório para começar.</p>;
     }
   };
@@ -78,13 +70,7 @@ export default function PaginaRelatorios() {
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
         <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700 mb-4 pb-4">
           <button onClick={() => setActiveReport('listaEstoque')} className={activeReport === 'listaEstoque' ? 'report-nav-btn-active' : 'report-nav-btn'}>Estoque Geral</button>
-          <button onClick={() => setActiveReport('estoquePorLocal')} className={activeReport === 'estoquePorLocal' ? 'report-nav-btn-active' : 'report-nav-btn'}>Estoque por Local</button>
-          <button onClick={() => setActiveReport('estoquePorFabricante')} className={activeReport === 'estoquePorFabricante' ? 'report-nav-btn-active' : 'report-nav-btn'}>Estoque por Fabricante</button>
           <button onClick={() => setActiveReport('movimentacoes')} className={activeReport === 'movimentacoes' ? 'report-nav-btn-active' : 'report-nav-btn'}>Movimentações</button>
-          <button onClick={() => setActiveReport('movimentacaoPeriodo')} className={activeReport === 'movimentacaoPeriodo' ? 'report-nav-btn-active' : 'report-nav-btn'}>Movimentação por Período</button>
-          {userRole === 'master' && (
-            <button onClick={() => setActiveReport('movimentacoesUsuario')} className={activeReport === 'movimentacoesUsuario' ? 'report-nav-btn-active' : 'report-nav-btn'}>Movimentações por Usuário</button>
-          )}
         </div>
         <div id="report-content">
           {renderRelatorio()}

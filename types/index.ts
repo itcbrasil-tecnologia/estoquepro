@@ -24,7 +24,11 @@ export interface EstoqueItem {
   quantidade: number; 
   localidadeId: string; 
 }
-export interface Localidade { id: string; nome: string; }
+export interface Localidade { 
+  id: string; 
+  nome: string; 
+  cor?: string; // NOVO CAMPO
+}
 export interface Fabricante { id: string; nome: string; }
 export interface Categoria { id: string; nome: string; }
 export interface Fornecedor { id: string; nome: string; contato_nome?: string; contato_whatsapp?: string; }

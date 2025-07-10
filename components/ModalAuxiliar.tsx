@@ -13,6 +13,7 @@ interface Item {
   nome: string;
   contato_nome?: string;
   contato_whatsapp?: string;
+  cor?: string;
 }
 
 interface ModalAuxiliarProps {
@@ -24,7 +25,7 @@ interface ModalAuxiliarProps {
   existingItems: Item[];
 }
 
-const initialFormData = { nome: '', contato_nome: '', contato_whatsapp: '' };
+const initialFormData = { nome: '', contato_nome: '', contato_whatsapp: '', cor: '#cccccc' };
 
 export default function ModalAuxiliar({ isOpen, onClose, itemToEdit, collectionName, title, existingItems }: ModalAuxiliarProps) {
   const [formData, setFormData] = useState<Item>(initialFormData);
@@ -32,10 +33,12 @@ export default function ModalAuxiliar({ isOpen, onClose, itemToEdit, collectionN
   const { addToast } = useToast();
 
   useEffect(() => {
-    if (itemToEdit) {
-      setFormData(itemToEdit);
-    } else {
-      setFormData(initialFormData);
+    if (isOpen) {
+      if (itemToEdit) {
+        setFormData({ ...initialFormData, ...itemToEdit });
+      } else {
+        setFormData(initialFormData);
+      }
     }
   }, [itemToEdit, isOpen]);
 
@@ -102,6 +105,28 @@ export default function ModalAuxiliar({ isOpen, onClose, itemToEdit, collectionN
                 <input type="text" name="contato_whatsapp" value={formData.contato_whatsapp || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
               </div>
             </>
+          )}
+          {collectionName === 'localidades' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cor da Localidade</label>
+              <div className="flex items-center mt-1 space-x-2">
+                <input 
+                  type="color" 
+                  name="cor" 
+                  value={formData.cor || '#cccccc'} 
+                  onChange={handleChange} 
+                  className="w-12 h-10 p-1 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                />
+                <input 
+                  type="text" 
+                  name="cor" 
+                  value={formData.cor || '#cccccc'} 
+                  onChange={handleChange} 
+                  placeholder="#RRGGBB"
+                  className="block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+            </div>
           )}
         </div>
         <div className="flex justify-end mt-8 items-center gap-x-4">

@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
-import { CacheData, Produto, EstoqueItem, HistoricoItem, Usuario } from '@/types';
+import { CacheData, Produto } from '@/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBoxesStacked, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faBoxesStacked, faExclamationTriangle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import TabelaMovimentacoesRecentes from '@/components/TabelaMovimentacoesRecentes';
 import TabelaEstoqueBaixo from '@/components/TabelaEstoqueBaixo';
+import TabelaEstoqueProximo from '@/components/TabelaEstoqueProximo';
 import ModalDetalhes from '@/components/ModalDetalhes';
-import Modal from '@/components/Modal'; // Importa o componente de Modal genérico
+import Modal from '@/components/Modal';
 
 const SummaryCard = ({ title, value, icon, colorClass, children }: any) => (
   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col justify-between transition-transform transform hover:-translate-y-1">
@@ -33,8 +34,12 @@ export default function DashboardPage() {
     usuarios: new Map(), historico: [],
   });
   const [loading, setLoading] = useState(true);
-  const [isDetalhesModalOpen, setIsDetalhesModalOpen] = useState(false);
-  const [isEstoqueBaixoModalOpen, setIsEstoqueBaixoModalOpen] = useState(false);
+  
+  const [modalState, setModalState] = useState({
+      detalhes: false,
+      estoqueBaixo: false,
+      estoqueProximo: false
+  });
   const [produtoDetalhes, setProdutoDetalhes] = useState<Produto | null>(null);
 
   useEffect(() => {
@@ -66,18 +71,31 @@ export default function DashboardPage() {
 
   const handleOpenDetalhes = (produto: Produto) => {
     setProdutoDetalhes(produto);
-    setIsEstoqueBaixoModalOpen(false); // Fecha o modal de estoque baixo
-    setIsDetalhesModalOpen(true); // Abre o modal de detalhes do produto
+    setModalState({ detalhes: true, estoqueBaixo: false, estoqueProximo: false });
   };
 
-  const totalProdutos = caches.produtos.size;
-  
-  const itensComEstoqueBaixo = Array.from(caches.produtos.values()).filter(p => {
-    const totalEstoque = caches.estoque
-        .filter(e => e.produtoId === p.id)
-        .reduce((sum, e) => sum + e.quantidade, 0);
-    return totalEstoque < (p.estoqueMinimo || 0);
-  });
+  const { itensEstoqueBaixo, itensEstoqueProximo } = useMemo(() => {
+    const produtosArray = Array.from(caches.produtos.values());
+    const baixo: Produto[] = [];
+    const proximo: Produto[] = [];
+
+    produtosArray.forEach(p => {
+        const totalEstoque = caches.estoque
+            .filter(e => e.produtoId === p.id)
+            .reduce((sum, e) => sum + e.quantidade, 0);
+        
+        const estoqueMinimo = p.estoqueMinimo || 0;
+        if(estoqueMinimo > 0) {
+            if(totalEstoque <= estoqueMinimo / 2) {
+                baixo.push(p);
+            } else if (totalEstoque < estoqueMinimo) {
+                proximo.push(p);
+            }
+        }
+    });
+    return { itensEstoqueBaixo: baixo, itensEstoqueProximo: proximo };
+  }, [caches.produtos, caches.estoque]);
+
 
   if (loading) {
     return <div className="text-center py-10 text-gray-600 dark:text-gray-400">Carregando Dashboard...</div>;
@@ -87,12 +105,14 @@ export default function DashboardPage() {
     <div>
       <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <SummaryCard title="Total de Produtos" value={totalProdutos} icon={faBoxesStacked} colorClass="bg-blue-500" />
-        <SummaryCard title="Itens com Estoque Baixo" value={itensComEstoqueBaixo.length} icon={faExclamationTriangle} colorClass="bg-red-500">
-            <button 
-                onClick={() => setIsEstoqueBaixoModalOpen(true)} 
-                className="text-sm font-semibold px-3 py-1 rounded-md bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900/80 transition-colors"
-            >
+        <SummaryCard title="Total de Produtos" value={caches.produtos.size} icon={faBoxesStacked} colorClass="bg-blue-500" />
+        <SummaryCard title="Itens com Estoque Baixo" value={itensEstoqueBaixo.length} icon={faExclamationTriangle} colorClass="bg-red-500">
+            <button onClick={() => setModalState(s => ({...s, estoqueBaixo: true}))} className="text-sm font-semibold px-3 py-1 rounded-md bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900/80 transition-colors">
+                Detalhes
+            </button>
+        </SummaryCard>
+        <SummaryCard title="Próximo do Mínimo" value={itensEstoqueProximo.length} icon={faExclamationCircle} colorClass="bg-yellow-500">
+            <button onClick={() => setModalState(s => ({...s, estoqueProximo: true}))} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:hover:bg-yellow-900/80 transition-colors">
                 Detalhes
             </button>
         </SummaryCard>
@@ -103,21 +123,17 @@ export default function DashboardPage() {
         <TabelaMovimentacoesRecentes caches={caches} />
       </div>
 
-      <Modal
-        isOpen={isEstoqueBaixoModalOpen}
-        onClose={() => setIsEstoqueBaixoModalOpen(false)}
-        title="Itens com Estoque Baixo"
-      >
-        <TabelaEstoqueBaixo 
-            produtos={Array.from(caches.produtos.values())} 
-            estoque={caches.estoque}
-            onDetailsClick={handleOpenDetalhes}
-        />
+      <Modal isOpen={modalState.estoqueBaixo} onClose={() => setModalState(s => ({...s, estoqueBaixo: false}))} title="Itens com Estoque Baixo (Crítico)">
+        <TabelaEstoqueBaixo produtos={itensEstoqueBaixo} estoque={caches.estoque} onDetailsClick={handleOpenDetalhes} />
+      </Modal>
+
+      <Modal isOpen={modalState.estoqueProximo} onClose={() => setModalState(s => ({...s, estoqueProximo: false}))} title="Itens Próximos do Estoque Mínimo (Atenção)">
+        <TabelaEstoqueProximo produtos={itensEstoqueProximo} estoque={caches.estoque} onDetailsClick={handleOpenDetalhes} />
       </Modal>
 
       <ModalDetalhes 
-        isOpen={isDetalhesModalOpen}
-        onClose={() => setIsDetalhesModalOpen(false)}
+        isOpen={modalState.detalhes}
+        onClose={() => setModalState(s => ({...s, detalhes: false}))}
         produto={produtoDetalhes}
         caches={caches}
       />

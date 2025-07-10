@@ -59,7 +59,10 @@ export default function PaginaLocalidades() {
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {items.map(item => (
             <li key={item.id} className="p-4 flex justify-between items-center">
-              <span className="font-medium text-gray-800 dark:text-gray-200">{item.nome}</span>
+              <div className="flex items-center">
+                <span style={{ backgroundColor: item.cor || '#ccc' }} className="w-4 h-4 rounded-full mr-3 border border-gray-300 dark:border-gray-600"></span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{item.nome}</span>
+              </div>
               {userRole === 'master' && (
                 <div className="space-x-4">
                   <button onClick={() => handleOpenModal(item)} className="text-yellow-600 hover:text-yellow-500"><FontAwesomeIcon icon={faEdit} /></button>

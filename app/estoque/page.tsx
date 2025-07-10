@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 import CardProduto from '@/components/CardProduto';
@@ -13,7 +13,7 @@ import { Produto, CacheData } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTh, faList, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTh, faList, faSearch, faSort } from '@fortawesome/free-solid-svg-icons';
 
 const ITENS_POR_PAGINA = 24;
 
@@ -28,6 +28,8 @@ export default function PaginaEstoque() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState('recentes');
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
 
   const [filtroBusca, setFiltroBusca] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
@@ -41,6 +43,7 @@ export default function PaginaEstoque() {
   });
   
   const [itemSelecionado, setItemSelecionado] = useState<Produto | null>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico'];
@@ -66,7 +69,17 @@ export default function PaginaEstoque() {
       })
     );
 
-    return () => unsubscribers.forEach(unsub => unsub());
+    function handleClickOutside(event: MouseEvent) {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
+        setSortDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+        unsubscribers.forEach(unsub => unsub());
+        document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleOpenModal = (tipo: 'add' | 'edit' | 'details' | 'move', produto: Produto | null = null) => {
@@ -82,27 +95,65 @@ export default function PaginaEstoque() {
   };
 
   const handleDeleteProduto = async (id: string) => {
-    // ... (lógica de exclusão permanece a mesma)
+    if(userRole !== 'master') {
+        addToast("Apenas administradores podem excluir produtos.", 'error');
+        return;
+    }
+
+    const produto = caches.produtos.get(id);
+    if (!produto) return;
+
+    const totalEstoque = caches.estoque.filter(e => e.produtoId === id).reduce((sum, e) => sum + e.quantidade, 0);
+    if (totalEstoque > 0) {
+        addToast(`Não é possível excluir: ainda há ${totalEstoque} ${produto.unidade}(s) em estoque.`, 'error');
+        return;
+    }
+
+    if (confirm(`Tem certeza que deseja excluir o produto "${produto.nome}"? Todo o seu histórico será perdido.`)) {
+        const batch = writeBatch(db);
+        batch.delete(doc(db, "produtos", id));
+        caches.estoque.filter(e => e.produtoId === id).forEach(item => batch.delete(doc(db, "estoque", item.id)));
+        caches.historico.filter(h => h.produtoId === id).forEach(item => batch.delete(doc(db, "historico", item.id)));
+        
+        try {
+            await batch.commit();
+            addToast("Produto excluído com sucesso!", 'success');
+            handleCloseModals();
+        } catch (error) {
+            console.error("Erro ao excluir produto:", error);
+            addToast("Ocorreu um erro ao tentar excluir o produto.", 'error');
+        }
+    }
   };
 
-  // Lógica de Filtro e Paginação
-  let produtosFiltrados = Array.from(caches.produtos.values());
-  if (filtroBusca) {
-    produtosFiltrados = produtosFiltrados.filter(p => 
-        p.nome.toLowerCase().includes(filtroBusca.toLowerCase())
-    );
-  }
-  if (filtroCategoria) produtosFiltrados = produtosFiltrados.filter(p => p.categoriaId === filtroCategoria);
-  if (filtroFornecedor) produtosFiltrados = produtosFiltrados.filter(p => p.fornecedorId === filtroFornecedor);
-  if (filtroLocalidade) {
-    const produtosNoLocal = caches.estoque.filter(e => e.localidadeId === filtroLocalidade && e.quantidade > 0).map(e => e.produtoId);
-    produtosFiltrados = produtosFiltrados.filter(p => produtosNoLocal.includes(p.id));
-  }
+  const produtosProcessados = useMemo(() => {
+    let produtosArray = Array.from(caches.produtos.values());
 
-  const totalPages = Math.ceil(produtosFiltrados.length / ITENS_POR_PAGINA);
+    if (filtroBusca) {
+        produtosArray = produtosArray.filter(p => 
+            p.nome.toLowerCase().includes(filtroBusca.toLowerCase())
+        );
+    }
+    if (filtroCategoria) produtosArray = produtosArray.filter(p => p.categoriaId === filtroCategoria);
+    if (filtroFornecedor) produtosArray = produtosArray.filter(p => p.fornecedorId === filtroFornecedor);
+    if (filtroLocalidade) {
+        const produtosNoLocal = caches.estoque.filter(e => e.localidadeId === filtroLocalidade && e.quantidade > 0).map(e => e.produtoId);
+        produtosArray = produtosArray.filter(p => produtosNoLocal.includes(p.id));
+    }
+
+    if (sortBy === 'recentes') {
+        produtosArray.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+    } else if (sortBy === 'alfabetica') {
+        produtosArray.sort((a, b) => a.nome.localeCompare(b.nome));
+    }
+
+    return produtosArray;
+  }, [caches.produtos, caches.estoque, filtroBusca, filtroCategoria, filtroFornecedor, filtroLocalidade, sortBy]);
+
+  const totalPages = Math.ceil(produtosProcessados.length / ITENS_POR_PAGINA);
   const startIndex = (currentPage - 1) * ITENS_POR_PAGINA;
   const endIndex = startIndex + ITENS_POR_PAGINA;
-  const produtosPaginados = produtosFiltrados.slice(startIndex, endIndex);
+  const produtosPaginados = produtosProcessados.slice(startIndex, endIndex);
 
   if (loading) {
     return <div className="text-center py-10 text-gray-600 dark:text-gray-400">Carregando...</div>;
@@ -110,16 +161,32 @@ export default function PaginaEstoque() {
 
   return (
     <div>
-      <header className="flex justify-between items-center mb-6">
+      <header className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Produtos</h1>
-        <button onClick={() => handleOpenModal('add')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center">
-          <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Produto
-        </button>
+        <div className="flex items-center gap-2">
+            <div className="relative" ref={sortDropdownRef}>
+                <button onClick={() => setSortDropdownOpen(!sortDropdownOpen)} className="p-2 h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                    <FontAwesomeIcon icon={faSort} />
+                </button>
+                {sortDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-20">
+                        <button onClick={() => { setSortBy('recentes'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Mais Recentes</button>
+                        <button onClick={() => { setSortBy('alfabetica'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Ordem Alfabética</button>
+                    </div>
+                )}
+            </div>
+            <div className="flex">
+                <button onClick={() => setViewMode('grid')} className={`p-2 h-10 w-10 rounded-l-lg transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faTh} /></button>
+                <button onClick={() => setViewMode('list')} className={`p-2 h-10 w-10 rounded-r-lg transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faList} /></button>
+            </div>
+            <button onClick={() => handleOpenModal('add')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center h-10">
+            <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Produto
+            </button>
+        </div>
       </header>
 
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 flex-grow">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria</label>
               <select onChange={(e) => setFiltroCategoria(e.target.value)} className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todas</option>{Array.from(caches.categorias.values()).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
@@ -139,11 +206,6 @@ export default function PaginaEstoque() {
               </span>
               <input type="text" placeholder="Buscar..." onChange={(e) => setFiltroBusca(e.target.value)} className="p-2 pl-10 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"/>
             </div>
-          </div>
-          <div className="flex">
-            <button onClick={() => setViewMode('grid')} className={`p-2 h-10 w-10 rounded-l-lg transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faTh} /></button>
-            <button onClick={() => setViewMode('list')} className={`p-2 h-10 w-10 rounded-r-lg transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faList} /></button>
-          </div>
         </div>
       </div>
       

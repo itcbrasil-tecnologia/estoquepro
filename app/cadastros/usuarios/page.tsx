@@ -6,7 +6,7 @@ import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import ModalUsuario from '@/components/ModalUsuario';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { Usuario } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -16,6 +16,7 @@ export default function PaginaUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [itemEmEdicao, setItemEmEdicao] = useState<Usuario | null>(null);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'usuarios'), (snapshot) => {
@@ -25,6 +26,11 @@ export default function PaginaUsuarios() {
     });
     return () => unsub();
   }, []);
+
+  const handleOpenModal = (item: Usuario | null = null) => {
+    setItemEmEdicao(item);
+    setIsModalOpen(true);
+  };
 
   const handleDelete = async (id: string) => {
     if (confirm("Esta ação desativará o acesso do usuário, mas manterá seu histórico de movimentações. Deseja continuar?")) {
@@ -44,7 +50,7 @@ export default function PaginaUsuarios() {
     <div>
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Gestão de Usuários</h1>
-        <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center">
+        <button onClick={() => handleOpenModal()} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center">
           <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Usuário
         </button>
       </header>
@@ -59,6 +65,7 @@ export default function PaginaUsuarios() {
               </div>
               {user?.uid !== item.id && (
                 <div className="space-x-4">
+                  <button onClick={() => handleOpenModal(item)} className="text-yellow-600 hover:text-yellow-500"><FontAwesomeIcon icon={faEdit} /></button>
                   <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-500"><FontAwesomeIcon icon={faTrash} /></button>
                 </div>
               )}
@@ -66,7 +73,7 @@ export default function PaginaUsuarios() {
           ))}
         </ul>
       </div>
-      <ModalUsuario isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ModalUsuario isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} userToEdit={itemEmEdicao} />
     </div>
   );
 }
