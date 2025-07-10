@@ -20,29 +20,17 @@ export default function PaginaLocalidades() {
   const [itemEmEdicao, setItemEmEdicao] = useState<Localidade | null>(null);
 
   useEffect(() => {
-    let localidadesLoaded = false;
-    let projetosLoaded = false;
-
-    const checkLoadingDone = () => {
-        if (localidadesLoaded && projetosLoaded) {
-            setLoading(false);
-        }
-    };
-
     const unsubLocalidades = onSnapshot(collection(db, 'localidades'), (snapshot) => {
       const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Localidade))
         .sort((a, b) => a.nome.localeCompare(b.nome));
       setItems(lista);
-      localidadesLoaded = true;
-      checkLoadingDone();
+      setLoading(false); // Apenas um listener principal para o loading
     });
     
     const unsubProjetos = onSnapshot(collection(db, 'projetos'), (snapshot) => {
         const mapa = new Map<string, Projeto>();
         snapshot.docs.forEach(doc => mapa.set(doc.id, { id: doc.id, ...doc.data() } as Projeto));
         setProjetos(mapa);
-        projetosLoaded = true;
-        checkLoadingDone();
     });
 
     return () => {
