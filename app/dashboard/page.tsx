@@ -1,4 +1,4 @@
-'use client';
+'use client'; // ESSENCIAL PARA RESOLVER O ERRO DE BUILD
 
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
@@ -11,7 +11,6 @@ import TabelaMovimentacoesRecentes from '@/components/TabelaMovimentacoesRecente
 import TabelaEstoqueBaixo from '@/components/TabelaEstoqueBaixo';
 import ModalDetalhes from '@/components/ModalDetalhes';
 import Modal from '@/components/Modal';
-import TabelaEstoqueProximo from '@/components/TabelaEstoqueProximo';
 
 const SummaryCard = ({ title, value, icon, colorClass, children, onClick }: any) => (
   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col justify-between transition-transform transform hover:-translate-y-1">
@@ -45,7 +44,7 @@ export default function DashboardPage() {
   const [produtoDetalhes, setProdutoDetalhes] = useState<Produto | null>(null);
 
   useEffect(() => {
-    if (authLoading) return; // Espera a autenticação terminar
+    if (authLoading) return;
 
     const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'historico', 'usuarios', 'localidades', 'fabricantes', 'categorias', 'fornecedores'];
     

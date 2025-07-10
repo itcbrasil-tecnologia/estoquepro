@@ -1,4 +1,4 @@
-'use client';
+'use client'; // ESSENCIAL PARA RESOLVER O ERRO DE BUILD
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';

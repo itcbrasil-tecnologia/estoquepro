@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Sistema de Controle de Estoque",
   description: "Gerencie seu estoque de forma eficiente",
   icons: {
-    icon: '/favicon.ico', // Define um caminho padrão para o ícone
+    icon: '/favicon.ico',
   },
 };
 
