@@ -8,6 +8,7 @@ import { Produto, CacheData } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { logAction } from '@/lib/audit'; // Importa a função de log
 
 interface ModalProdutoProps {
   isOpen: boolean;
@@ -75,6 +76,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
       if (produtoToEdit?.id) {
         const produtoRef = doc(db, "produtos", produtoToEdit.id);
         await updateDoc(produtoRef, dataToSave);
+        await logAction('PRODUTO_EDITADO', { id: produtoToEdit.id, nome: dataToSave.nome });
         addToast('Produto atualizado com sucesso!', 'success');
       } else {
         dataToSave.createdAt = serverTimestamp();
@@ -90,16 +92,19 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
         const batch = writeBatch(db);
         const produtoRef = doc(collection(db, "produtos"));
         batch.set(produtoRef, dataToSave);
+        await logAction('PRODUTO_CRIADO', { id: produtoRef.id, nome: dataToSave.nome });
 
         if (qtdInicial > 0 && localInicial) {
             const estoqueRef = doc(collection(db, "estoque"));
             batch.set(estoqueRef, { produtoId: produtoRef.id, localidadeId: localInicial, quantidade: qtdInicial });
             
             const histRef = doc(collection(db, "historico"));
-            batch.set(histRef, {
+            const historicoData = {
                 produtoId: produtoRef.id, tipo: 'ENTRADA', quantidade: qtdInicial,
                 localidadeDestinoId: localInicial, data: serverTimestamp(), usuario: auth.currentUser?.uid
-            });
+            };
+            batch.set(histRef, historicoData);
+            await logAction('MOVIMENTACAO_ESTOQUE', { tipo: 'ENTRADA', quantidade: qtdInicial, produto: dataToSave.nome });
         }
         await batch.commit();
         addToast('Produto adicionado com sucesso!', 'success');
