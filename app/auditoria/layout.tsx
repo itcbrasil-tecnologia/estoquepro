@@ -20,7 +20,11 @@ export default function AuditoriaLayout({
   }, [userRole, loading, router]);
 
   if (loading || userRole !== 'master') {
-    return <div className="flex items-center justify-center h-screen dark:text-white">Verificando permissões...</div>;
+    return (
+        <div className="flex items-center justify-center h-screen text-gray-600 dark:text-gray-300">
+            Verificando permissões...
+        </div>
+    );
   }
 
   return <ProtectedLayout>{children}</ProtectedLayout>;

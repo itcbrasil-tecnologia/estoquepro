@@ -43,12 +43,12 @@ export default function PaginaFabricantes() {
     }
   };
 
-  if (loading) return <p className="dark:text-gray-300">Carregando...</p>;
+  if (loading) return <div className="text-center py-10 text-gray-600 dark:text-gray-400">Carregando...</div>;
 
   return (
     <div>
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Fabricantes</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Fabricantes</h1>
         {userRole === 'master' && (
           <button onClick={() => handleOpenModal()} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center">
             <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Fabricante

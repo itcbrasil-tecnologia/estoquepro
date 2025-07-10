@@ -28,3 +28,19 @@
     background-color: #e0e7ff; /* Exemplo de cor para filtro ativo */
     border-color: #4f46e5;
 }
+
+/* Animação para o Toast */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}

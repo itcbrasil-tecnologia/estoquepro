@@ -20,7 +20,11 @@ export default function ProtectedLayout({
   }, [user, loading, router]);
 
   if (loading || !user) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return (
+        <div className="flex items-center justify-center h-screen text-gray-600 dark:text-gray-300">
+            Carregando...
+        </div>
+    );
   }
 
   return (

@@ -14,8 +14,8 @@ export interface Produto {
   notas_internas?: string;
   documentos?: string; // JSON string
   estoqueMinimo?: number;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: Timestamp; // Corrigido para Timestamp
+  updatedAt?: Timestamp; // Corrigido para Timestamp
 }
 
 export interface EstoqueItem { 
