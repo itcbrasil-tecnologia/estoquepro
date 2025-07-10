@@ -13,7 +13,7 @@ import { Produto, CacheData } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTh, faList, faSearch, faSort } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTh, faList, faSearch, faSort, faFilter } from '@fortawesome/free-solid-svg-icons';
 
 const ITENS_POR_PAGINA = 24;
 
@@ -30,6 +30,7 @@ export default function PaginaEstoque() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('recentes');
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
 
   const [filtroBusca, setFiltroBusca] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
@@ -147,6 +148,9 @@ export default function PaginaEstoque() {
                     </div>
                 )}
             </div>
+            <button onClick={() => setIsFiltersVisible(!isFiltersVisible)} className="p-2 h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-lg flex md:hidden items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                <FontAwesomeIcon icon={faFilter} />
+            </button>
             <div className="flex">
                 <button onClick={() => setViewMode('grid')} className={`p-2 h-10 w-10 rounded-l-lg transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faTh} /></button>
                 <button onClick={() => setViewMode('list')} className={`p-2 h-10 w-10 rounded-r-lg transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faList} /></button>
@@ -154,12 +158,12 @@ export default function PaginaEstoque() {
             <button onClick={() => handleOpenModal('add')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center h-10">
                 <FontAwesomeIcon icon={faPlus} className="mr-2" />
                 <span className="hidden sm:inline">Adicionar Produto</span>
-                <span className="sm:hidden">Adicionar</span>
+                <span className="sm:hidden">Produto</span>
             </button>
         </div>
       </header>
 
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
+      <div className={`${isFiltersVisible ? 'block' : 'hidden'} md:block bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria</label>
