@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { CacheData } from '@/types';
 import Paginacao from './Paginacao';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileCsv } from '@fortawesome/free-solid-svg-icons';
+import Papa from 'papaparse';
 
 interface RelatorioProps {
   caches: CacheData;
@@ -43,8 +46,42 @@ export default function RelatorioMovimentacoes({ caches }: RelatorioProps) {
   const endIndex = startIndex + ITENS_POR_PAGINA;
   const historicoPaginado = historicoOrdenado.slice(startIndex, endIndex);
 
+  const handleExport = () => {
+    const dataToExport = historicoOrdenado.map(h => {
+        const produto = caches.produtos.get(h.produtoId);
+        const origem = h.localidadeOrigemId ? caches.localidades.get(h.localidadeOrigemId)?.nome : 'EXTERNO';
+        const destino = h.localidadeDestinoId ? caches.localidades.get(h.localidadeDestinoId)?.nome : 'EXTERNO';
+        const usuario = caches.usuarios.get(h.usuario)?.username || 'Desconhecido';
+        return {
+            Data: h.data ? h.data.toDate().toLocaleString('pt-BR') : 'N/A',
+            Produto: produto?.nome || 'N/A',
+            Tipo: h.tipo,
+            Quantidade: h.quantidade,
+            Origem: origem,
+            Destino: destino,
+            Usuario: usuario,
+        };
+    });
+
+    const csv = Papa.unparse(dataToExport);
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "relatorio_movimentacoes.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div>
+        <div className="flex justify-end mb-4">
+            <button onClick={handleExport} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 flex items-center">
+                <FontAwesomeIcon icon={faFileCsv} className="mr-2" /> Exportar para CSV
+            </button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Início</label>

@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { CacheData } from '@/types';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileCsv } from '@fortawesome/free-solid-svg-icons';
+import Papa from 'papaparse';
 
 interface RelatorioProps {
   caches: CacheData;
@@ -22,9 +25,39 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
     produtosFiltrados = produtosFiltrados.filter(p => produtosNoLocal.includes(p.id));
   }
 
+  const handleExport = () => {
+    const dataToExport = produtosFiltrados.map(p => {
+        const totalEstoque = caches.estoque.filter(e => e.produtoId === p.id).reduce((sum, e) => sum + e.quantidade, 0);
+        return {
+            Produto: p.nome,
+            Categoria: caches.categorias.get(p.categoriaId ?? '')?.nome || 'N/A',
+            Fornecedor: caches.fornecedores.get(p.fornecedorId ?? '')?.nome || 'N/A',
+            Fabricante: caches.fabricantes.get(p.fabricanteId ?? '')?.nome || 'N/A',
+            'Estoque Total': totalEstoque,
+            Unidade: p.unidade,
+        };
+    });
+
+    const csv = Papa.unparse(dataToExport);
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "relatorio_estoque_geral.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div className="flex justify-end mb-4">
+        <button onClick={handleExport} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 flex items-center">
+            <FontAwesomeIcon icon={faFileCsv} className="mr-2" /> Exportar para CSV
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <select onChange={(e) => setCatFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todas as Categorias</option>{Array.from(caches.categorias.values()).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
         <select onChange={(e) => setFornFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todos os Fornecedores</option>{Array.from(caches.fornecedores.values()).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>
         <select onChange={(e) => setFabFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todos os Fabricantes</option>{Array.from(caches.fabricantes.values()).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>

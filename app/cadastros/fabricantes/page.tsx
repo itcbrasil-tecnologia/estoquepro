@@ -43,7 +43,7 @@ export default function PaginaFabricantes() {
     }
   };
 
-  if (loading) return <div className="text-center py-10 text-gray-600 dark:text-gray-400">Carregando...</div>;
+  if (loading) return <p className="dark:text-gray-300">Carregando...</p>;
 
   return (
     <div>
