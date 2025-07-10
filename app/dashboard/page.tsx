@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const [caches, setCaches] = useState<CacheData>({
     produtos: new Map(), estoque: [], localidades: new Map(),
     fabricantes: new Map(), categorias: new Map(), fornecedores: new Map(),
-    usuarios: new Map(), historico: [],
+    usuarios: new Map(), historico: [], projetos: new Map(),
   });
   const [dataLoading, setDataLoading] = useState(true);
   
@@ -47,7 +47,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (authLoading) return;
 
-    const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'historico', 'usuarios', 'localidades', 'fabricantes', 'categorias', 'fornecedores'];
+    const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'historico', 'usuarios', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'projetos'];
     
     const unsubscribers = collectionsToListen.map(name => 
       onSnapshot(collection(db, name), (snapshot) => {
