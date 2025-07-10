@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image'; // Importa o componente Image
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { Produto, EstoqueItem, Categoria, Fornecedor } from '@/types';
 
@@ -52,9 +52,7 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
             <div className="flex justify-end space-x-3">
                 <button onClick={onDetails} className="text-sm font-semibold px-3 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/80 transition-colors">Detalhes</button>
                 <button onClick={onMove} className="text-sm font-semibold px-3 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/80 transition-colors">Movimentar</button>
-                {userRole === 'master' && (
                 <button onClick={onEdit} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:hover:bg-yellow-900/80 transition-colors">Editar</button>
-                )}
             </div>
         </td>
     </tr>
