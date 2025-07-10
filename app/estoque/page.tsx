@@ -99,8 +99,6 @@ export default function PaginaEstoque() {
   };
 
   const produtosProcessados = useMemo(() => {
-    if (!caches || !caches.produtos) return [];
-
     let produtosArray = Array.from(caches.produtos.values());
 
     if (filtroBusca) {
@@ -136,14 +134,14 @@ export default function PaginaEstoque() {
   return (
     <div>
       <header className="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Produtos</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Produtos</h1>
         <div className="flex items-center gap-2">
             <div className="relative" ref={sortDropdownRef}>
                 <button onClick={() => setSortDropdownOpen(!sortDropdownOpen)} className="p-2 h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
                     <FontAwesomeIcon icon={faSort} />
                 </button>
                 {sortDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-20">
+                    <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-20">
                         <button onClick={() => { setSortBy('recentes'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Mais Recentes</button>
                         <button onClick={() => { setSortBy('alfabetica'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Ordem Alfabética</button>
                     </div>
@@ -154,7 +152,9 @@ export default function PaginaEstoque() {
                 <button onClick={() => setViewMode('list')} className={`p-2 h-10 w-10 rounded-r-lg transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faList} /></button>
             </div>
             <button onClick={() => handleOpenModal('add')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center h-10">
-            <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Produto
+                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                <span className="hidden sm:inline">Adicionar Produto</span>
+                <span className="sm:hidden">Adicionar</span>
             </button>
         </div>
       </header>
