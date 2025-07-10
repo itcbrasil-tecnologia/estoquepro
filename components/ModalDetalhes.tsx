@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image'; // Importa o componente Image
 import Modal from './Modal';
 import { Produto, CacheData, HistoricoItem } from '@/types';
 
@@ -34,7 +35,13 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
     <Modal isOpen={isOpen} onClose={onClose} title={produto.nome}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
-          <img src={produto.foto_url || 'https://placehold.co/400x400/e2e8f0/cbd5e0?text=N/A'} alt={`Foto de ${produto.nome}`} className="rounded-lg w-full h-auto object-cover shadow-md"/>
+          <Image 
+            src={produto.foto_url || 'https://placehold.co/400x400/e2e8f0/cbd5e0?text=N/A'} 
+            alt={`Foto de ${produto.nome}`} 
+            width={400}
+            height={400}
+            className="rounded-lg w-full h-auto object-cover shadow-md"
+          />
         </div>
         <div className="md:col-span-2 space-y-3 text-sm text-gray-600 dark:text-gray-300">
           <p><strong>Serial Number:</strong> <span className="font-mono text-gray-800 dark:text-gray-100">{produto.serialNumber || 'N/A'}</span></p>
@@ -50,7 +57,7 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
               {estoqueDoProduto.length > 0 ? estoqueDoProduto.map(item => {
                 const local = caches.localidades.get(item.localidadeId);
                 return (
-                  <div key={item.id} className="flex justify-between items-center text-gray-800 dark:text-gray-200">
+                  <div key={item.id} className="flex justify-between text-gray-800 dark:text-gray-200">
                     <div className="flex items-center">
                       <span style={{ backgroundColor: local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
                       <span>{local?.nome || 'Desconhecido'}</span>

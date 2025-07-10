@@ -4,15 +4,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { CacheData, Produto } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBoxesStacked, faExclamationTriangle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import TabelaMovimentacoesRecentes from '@/components/TabelaMovimentacoesRecentes';
 import TabelaEstoqueBaixo from '@/components/TabelaEstoqueBaixo';
-import TabelaEstoqueProximo from '@/components/TabelaEstoqueProximo';
 import ModalDetalhes from '@/components/ModalDetalhes';
 import Modal from '@/components/Modal';
+import TabelaEstoqueProximo from '@/components/TabelaEstoqueProximo';
 
-const SummaryCard = ({ title, value, icon, colorClass, children }: any) => (
+const SummaryCard = ({ title, value, icon, colorClass, children, onClick }: any) => (
   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col justify-between transition-transform transform hover:-translate-y-1">
     <div className="flex items-center">
         <div className={`p-3 rounded-full mr-4 ${colorClass}`}>
@@ -28,12 +29,13 @@ const SummaryCard = ({ title, value, icon, colorClass, children }: any) => (
 );
 
 export default function DashboardPage() {
+  const { user, loading: authLoading } = useAuth();
   const [caches, setCaches] = useState<CacheData>({
     produtos: new Map(), estoque: [], localidades: new Map(),
     fabricantes: new Map(), categorias: new Map(), fornecedores: new Map(),
     usuarios: new Map(), historico: [],
   });
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   
   const [modalState, setModalState] = useState({
       detalhes: false,
@@ -43,9 +45,10 @@ export default function DashboardPage() {
   const [produtoDetalhes, setProdutoDetalhes] = useState<Produto | null>(null);
 
   useEffect(() => {
+    if (authLoading) return; // Espera a autenticação terminar
+
     const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'historico', 'usuarios', 'localidades', 'fabricantes', 'categorias', 'fornecedores'];
     
-    let loadedCount = 0;
     const unsubscribers = collectionsToListen.map(name => 
       onSnapshot(collection(db, name), (snapshot) => {
         setCaches((prevCaches: CacheData) => {
@@ -59,15 +62,11 @@ export default function DashboardPage() {
           }
           return newCache;
         });
-        loadedCount++;
-        if(loadedCount >= collectionsToListen.length) {
-            setLoading(false);
-        }
       })
     );
-
+    setDataLoading(false);
     return () => unsubscribers.forEach(unsub => unsub());
-  }, []);
+  }, [authLoading]);
 
   const handleOpenDetalhes = (produto: Produto) => {
     setProdutoDetalhes(produto);
@@ -97,7 +96,7 @@ export default function DashboardPage() {
   }, [caches.produtos, caches.estoque]);
 
 
-  if (loading) {
+  if (authLoading || dataLoading) {
     return <div className="text-center py-10 text-gray-600 dark:text-gray-400">Carregando Dashboard...</div>;
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image'; // Importa o componente Image
 import { useAuth } from '@/contexts/AuthContext';
 import { Produto, EstoqueItem, Categoria, Fornecedor } from '@/types';
 
@@ -34,7 +35,13 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-600">
         <td className="py-3 px-4">
             <div className="flex items-center space-x-3">
-                <img src={produto.foto_url || 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=N/A'} alt={`Foto de ${produto.nome}`} className="w-10 h-10 object-cover rounded-md" />
+                <Image 
+                  src={produto.foto_url || 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=N/A'} 
+                  alt={`Foto de ${produto.nome}`} 
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 object-cover rounded-md" 
+                />
                 <span className="font-medium text-gray-800 dark:text-gray-200">{produto.nome}</span>
             </div>
         </td>

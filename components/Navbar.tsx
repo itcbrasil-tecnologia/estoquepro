@@ -8,7 +8,7 @@ import { auth } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBoxesStacked, faChevronDown, faSignOutAlt, faUserCircle, faKey, faHistory } from '@fortawesome/free-solid-svg-icons';
+import { faBoxesStacked, faChevronDown, faSignOutAlt, faUserCircle, faKey } from '@fortawesome/free-solid-svg-icons';
 import ThemeSwitcher from './ThemeSwitcher';
 
 export default function Navbar() {

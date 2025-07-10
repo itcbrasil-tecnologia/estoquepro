@@ -36,26 +36,28 @@ export default function PaginaAuditoria() {
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Log de Auditoria</h1>
       </header>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full text-sm text-left text-gray-700 dark:text-gray-300">
-          <thead className="bg-gray-200 dark:bg-gray-700 text-xs uppercase">
-            <tr>
-              <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Data</th>
-              <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Usuário</th>
-              <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Ação</th>
-              <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Detalhes</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {logsPaginados.map(log => (
-              <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
-                <td className="py-3 px-4 whitespace-nowrap">{log.timestamp?.toDate().toLocaleString('pt-BR') || 'N/A'}</td>
-                <td className="py-3 px-4">{log.userEmail}</td>
-                <td className="py-3 px-4 font-semibold">{log.action}</td>
-                <td className="py-3 px-4 text-xs font-mono">{JSON.stringify(log.details)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+            <table className="min-w-full text-sm text-left text-gray-700 dark:text-gray-300">
+            <thead className="bg-gray-200 dark:bg-gray-700 text-xs uppercase">
+                <tr>
+                <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Data</th>
+                <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Usuário</th>
+                <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Ação</th>
+                <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Detalhes</th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {logsPaginados.map(log => (
+                <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <td className="py-3 px-4 whitespace-nowrap">{log.timestamp?.toDate().toLocaleString('pt-BR') || 'N/A'}</td>
+                    <td className="py-3 px-4">{log.userEmail}</td>
+                    <td className="py-3 px-4 font-semibold">{log.action}</td>
+                    <td className="py-3 px-4 text-xs font-mono">{JSON.stringify(log.details)}</td>
+                </tr>
+                ))}
+            </tbody>
+            </table>
+        </div>
       </div>
       <Paginacao currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </div>

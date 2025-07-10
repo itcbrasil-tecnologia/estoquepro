@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase/firestore";
+import { FieldValue, Timestamp } from "firebase/firestore";
 
 export interface Produto {
   id: string;
@@ -14,8 +14,8 @@ export interface Produto {
   notas_internas?: string;
   documentos?: string; // JSON string
   estoqueMinimo?: number;
-  createdAt?: FieldValue;
-  updatedAt?: FieldValue;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface EstoqueItem { 
@@ -24,11 +24,7 @@ export interface EstoqueItem {
   quantidade: number; 
   localidadeId: string; 
 }
-export interface Localidade { 
-  id: string; 
-  nome: string; 
-  cor?: string; // NOVO CAMPO
-}
+export interface Localidade { id: string; nome: string; cor?: string; }
 export interface Fabricante { id: string; nome: string; }
 export interface Categoria { id: string; nome: string; }
 export interface Fornecedor { id: string; nome: string; contato_nome?: string; contato_whatsapp?: string; }
@@ -42,6 +38,15 @@ export interface HistoricoItem {
   localidadeDestinoId?: string; 
   data: any; 
   usuario: string; 
+}
+
+export interface AuditLogItem {
+  id: string;
+  action: string;
+  details: any;
+  userEmail: string;
+  userId: string;
+  timestamp: any;
 }
 
 export interface CacheData {

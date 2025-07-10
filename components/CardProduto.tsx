@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image'; // Importa o componente Image
 import { useAuth } from '@/contexts/AuthContext';
 import { Produto, EstoqueItem, Fabricante } from '@/types';
 
@@ -19,28 +20,23 @@ export default function CardProduto({ produto, estoque, fabricantes, onEdit, onD
   const totalEstoque = estoque.filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
   const locaisComEstoque = estoque.filter(e => e.produtoId === produto.id && e.quantidade > 0).length;
   const fabricante = produto.fabricanteId ? fabricantes.get(produto.fabricanteId) : null;
-  
-  let corEstoque = 'text-green-500';
-  if (produto.estoqueMinimo && totalEstoque < produto.estoqueMinimo) {
-    corEstoque = 'text-yellow-500';
-  }
-  if (produto.estoqueMinimo && totalEstoque <= produto.estoqueMinimo / 2) {
-    corEstoque = 'text-red-500';
-  }
-  if (totalEstoque <= 0) {
-      corEstoque = 'text-red-500';
-  }
-
+  const cor = totalEstoque <= 0 ? 'text-red-500' : 'text-green-500';
 
   return (
     <div className="card-item bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-transform transform hover:-translate-y-1">
       <div className="flex items-start p-4">
-        <img src={produto.foto_url || 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=N/A'} alt={`Foto de ${produto.nome}`} className="w-24 h-24 object-cover rounded-md mr-4" />
+        <Image 
+          src={produto.foto_url || 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=N/A'} 
+          alt={`Foto de ${produto.nome}`} 
+          width={96}
+          height={96}
+          className="w-24 h-24 object-cover rounded-md mr-4" 
+        />
         <div className="flex-grow">
           <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{produto.nome}</h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">{fabricante?.nome || ''} {produto.modelo || ''}</p>
           <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">{produto.serialNumber || ''}</p>
-          <div className={`mt-2 text-xl font-bold ${corEstoque}`}>
+          <div className={`mt-2 text-xl font-bold ${cor}`}>
             {totalEstoque} <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{produto.unidade}</span>
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500">em {locaisComEstoque} locais</p>
