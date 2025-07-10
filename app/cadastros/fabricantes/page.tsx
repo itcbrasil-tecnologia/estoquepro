@@ -20,7 +20,8 @@ export default function PaginaFabricantes() {
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'fabricantes'), (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Fabricante));
+      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Fabricante))
+        .sort((a, b) => a.nome.localeCompare(b.nome)); // Ordena alfabeticamente
       setItems(lista);
       setLoading(false);
     });

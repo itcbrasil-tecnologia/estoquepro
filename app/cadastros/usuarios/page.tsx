@@ -44,7 +44,12 @@ export default function PaginaUsuarios() {
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'usuarios'), (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Usuario));
+      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Usuario))
+        .sort((a, b) => {
+            if (a.role === 'master' && b.role !== 'master') return -1;
+            if (a.role !== 'master' && b.role === 'master') return 1;
+            return a.username.localeCompare(b.username);
+        });
       setUsuarios(lista);
       setLoading(false);
     });
@@ -57,7 +62,15 @@ export default function PaginaUsuarios() {
   };
 
   const handleDelete = async (id: string) => {
-    // ... (lógica de exclusão)
+    if (confirm("Esta ação desativará o acesso do usuário, mas manterá seu histórico de movimentações. Deseja continuar?")) {
+      try {
+        await deleteDoc(doc(db, "usuarios", id));
+        addToast("Usuário desativado com sucesso.", "success");
+      } catch (error) {
+        console.error("Erro ao desativar usuário:", error);
+        addToast("Falha ao desativar usuário.", "error");
+      }
+    }
   };
 
   if (loading) return <p className="dark:text-gray-300">Carregando...</p>;

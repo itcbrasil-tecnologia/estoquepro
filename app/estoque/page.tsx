@@ -23,7 +23,7 @@ export default function PaginaEstoque() {
   const [caches, setCaches] = useState<CacheData>({
     produtos: new Map(), estoque: [], localidades: new Map(),
     fabricantes: new Map(), categorias: new Map(), fornecedores: new Map(),
-    usuarios: new Map(), historico: [],
+    usuarios: new Map(), historico: [], projetos: new Map(), // 'projetos' adicionado
   });
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,7 +47,7 @@ export default function PaginaEstoque() {
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico'];
+    const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico', 'projetos'];
     
     let loadedCount = 0;
     const unsubscribers = collectionsToListen.map(name => 
@@ -96,7 +96,35 @@ export default function PaginaEstoque() {
   };
 
   const handleDeleteProduto = async (id: string) => {
-    // ... (lógica de exclusão permanece a mesma)
+    if(userRole !== 'master') {
+        addToast("Apenas administradores podem excluir produtos.", 'error');
+        return;
+    }
+
+    const produto = caches.produtos.get(id);
+    if (!produto) return;
+
+    const totalEstoque = caches.estoque.filter(e => e.produtoId === id).reduce((sum, e) => sum + e.quantidade, 0);
+    if (totalEstoque > 0) {
+        addToast(`Não é possível excluir: ainda há ${totalEstoque} ${produto.unidade}(s) em estoque.`, 'error');
+        return;
+    }
+
+    if (confirm(`Tem certeza que deseja excluir o produto "${produto.nome}"? Todo o seu histórico será perdido.`)) {
+        const batch = writeBatch(db);
+        batch.delete(doc(db, "produtos", id));
+        caches.estoque.filter(e => e.produtoId === id).forEach(item => batch.delete(doc(db, "estoque", item.id)));
+        caches.historico.filter(h => h.produtoId === id).forEach(item => batch.delete(doc(db, "historico", item.id)));
+        
+        try {
+            await batch.commit();
+            addToast("Produto excluído com sucesso!", 'success');
+            handleCloseModals();
+        } catch (error) {
+            console.error("Erro ao excluir produto:", error);
+            addToast("Ocorreu um erro ao tentar excluir o produto.", 'error');
+        }
+    }
   };
 
   const produtosProcessados = useMemo(() => {
@@ -158,7 +186,7 @@ export default function PaginaEstoque() {
             <button onClick={() => handleOpenModal('add')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center h-10">
                 <FontAwesomeIcon icon={faPlus} className="mr-2" />
                 <span className="hidden sm:inline">Adicionar Produto</span>
-                <span className="sm:hidden">Produto</span>
+                <span className="sm:hidden">Adicionar</span>
             </button>
         </div>
       </header>

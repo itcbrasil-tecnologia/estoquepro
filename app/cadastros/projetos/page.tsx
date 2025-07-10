@@ -7,20 +7,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import ModalAuxiliar from '@/components/ModalAuxiliar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { Categoria } from '@/types';
+import { Projeto } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 
-export default function PaginaCategorias() {
+export default function PaginaProjetos() {
   const { userRole } = useAuth();
   const { addToast } = useToast();
-  const [items, setItems] = useState<Categoria[]>([]);
+  const [items, setItems] = useState<Projeto[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [itemEmEdicao, setItemEmEdicao] = useState<Categoria | null>(null);
+  const [itemEmEdicao, setItemEmEdicao] = useState<Projeto | null>(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'categorias'), (snapshot) => {
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Categoria))
+    const unsub = onSnapshot(collection(db, 'projetos'), (snapshot) => {
+      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Projeto))
         .sort((a, b) => a.nome.localeCompare(b.nome)); // Ordena alfabeticamente
       setItems(lista);
       setLoading(false);
@@ -28,18 +28,18 @@ export default function PaginaCategorias() {
     return () => unsub();
   }, []);
 
-  const handleOpenModal = (item: Categoria | null = null) => {
+  const handleOpenModal = (item: Projeto | null = null) => {
     setItemEmEdicao(item);
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir esta categoria?")) {
+    if (confirm("Tem certeza que deseja excluir este projeto?")) {
       try {
-        await deleteDoc(doc(db, "categorias", id));
-        addToast("Categoria excluída com sucesso!", "success");
+        await deleteDoc(doc(db, "projetos", id));
+        addToast("Projeto excluído com sucesso!", "success");
       } catch (error) {
-        addToast("Erro ao excluir categoria.", "error");
+        addToast("Erro ao excluir projeto.", "error");
       }
     }
   };
@@ -49,9 +49,9 @@ export default function PaginaCategorias() {
   return (
     <div>
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Categorias</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Projetos</h1>
         <button onClick={() => handleOpenModal()} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center self-start sm:self-auto">
-            <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Categoria
+            <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Projeto
         </button>
       </header>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
@@ -67,7 +67,7 @@ export default function PaginaCategorias() {
           ))}
         </ul>
       </div>
-      <ModalAuxiliar isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} itemToEdit={itemEmEdicao} collectionName="categorias" title="Categoria" existingItems={items} />
+      <ModalAuxiliar isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} itemToEdit={itemEmEdicao} collectionName="projetos" title="Projeto" existingItems={items} />
     </div>
   );
 }

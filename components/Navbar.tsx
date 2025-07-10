@@ -19,7 +19,6 @@ export default function Navbar() {
   const [cadastrosDropdownOpen, setCadastrosDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [adminMobileOpen, setAdminMobileOpen] = useState(false);
   
   const cadastrosDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -87,15 +86,16 @@ export default function Navbar() {
                 Administração <FontAwesomeIcon icon={faChevronDown} className="ml-2 text-xs" />
               </button>
               {cadastrosDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-gray-800 dark:bg-gray-700 rounded-md shadow-lg z-20" onClick={() => setCadastrosDropdownOpen(false)}>
-                  <Link href="/cadastros/localidades" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">Localidades</Link>
-                  <Link href="/cadastros/fornecedores" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">Fornecedores</Link>
-                  <Link href="/cadastros/categorias" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">Categorias</Link>
-                  <Link href="/cadastros/fabricantes" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">Fabricantes</Link>
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-20" onClick={() => setCadastrosDropdownOpen(false)}>
+                  <Link href="/cadastros/projetos" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Projetos</Link>
+                  <Link href="/cadastros/localidades" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Localidades</Link>
+                  <Link href="/cadastros/fornecedores" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Fornecedores</Link>
+                  <Link href="/cadastros/categorias" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Categorias</Link>
+                  <Link href="/cadastros/fabricantes" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Fabricantes</Link>
                   {userRole === 'master' && (
                     <>
-                      <Link href="/cadastros/usuarios" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">Usuários</Link>
-                      <Link href="/auditoria" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">Log de Auditoria</Link>
+                      <Link href="/cadastros/usuarios" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Usuários</Link>
+                      <Link href="/auditoria" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Log de Auditoria</Link>
                     </>
                   )}
                 </div>
@@ -143,28 +143,17 @@ export default function Navbar() {
             <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Dashboard</Link>
             <Link href="/estoque" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Produtos</Link>
             <Link href="/relatorios" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Relatórios</Link>
-            
-            {/* Menu Collapse para Administração */}
-            <div>
-                <button onClick={() => setAdminMobileOpen(!adminMobileOpen)} className="w-full text-left flex justify-between items-center px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
-                    <span>Administração</span>
-                    <FontAwesomeIcon icon={faChevronDown} className={`w-3 h-3 transition-transform ${adminMobileOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {adminMobileOpen && (
-                    <div className="pl-4 mt-1 space-y-1">
-                        <Link href="/cadastros/localidades" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Localidades</Link>
-                        <Link href="/cadastros/fornecedores" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Fornecedores</Link>
-                        <Link href="/cadastros/categorias" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Categorias</Link>
-                        <Link href="/cadastros/fabricantes" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Fabricantes</Link>
-                        {userRole === 'master' && (
-                        <>
-                            <Link href="/cadastros/usuarios" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Usuários</Link>
-                            <Link href="/auditoria" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">Log de Auditoria</Link>
-                        </>
-                        )}
-                    </div>
-                )}
-            </div>
+            <Link href="/cadastros/projetos" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Projetos</Link>
+            <Link href="/cadastros/localidades" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Localidades</Link>
+            <Link href="/cadastros/fornecedores" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Fornecedores</Link>
+            <Link href="/cadastros/categorias" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Categorias</Link>
+            <Link href="/cadastros/fabricantes" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Fabricantes</Link>
+            {userRole === 'master' && (
+              <>
+                <Link href="/cadastros/usuarios" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Usuários</Link>
+                <Link href="/auditoria" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Log de Auditoria</Link>
+              </>
+            )}
           </div>
           <div className="pt-4 pb-3 border-t border-gray-700">
             <div className="px-5">

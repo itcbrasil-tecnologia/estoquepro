@@ -24,11 +24,17 @@ export interface EstoqueItem {
   quantidade: number; 
   localidadeId: string; 
 }
-export interface Localidade { id: string; nome: string; cor?: string; }
+export interface Localidade { 
+  id: string; 
+  nome: string; 
+  cor?: string;
+  projetoId?: string; // NOVO CAMPO
+}
 export interface Fabricante { id: string; nome: string; }
 export interface Categoria { id: string; nome: string; }
 export interface Fornecedor { id: string; nome: string; contato_nome?: string; contato_whatsapp?: string; }
 export interface Usuario { id: string; username: string; email: string; role: string; }
+export interface Projeto { id: string; nome: string; }
 export interface HistoricoItem { 
   id: string; 
   produtoId: string; 
@@ -58,4 +64,5 @@ export interface CacheData {
     fornecedores: Map<string, Fornecedor>;
     usuarios: Map<string, Usuario>;
     historico: HistoricoItem[];
+    projetos: Map<string, Projeto>;
 }

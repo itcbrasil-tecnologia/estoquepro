@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { CacheData } from '@/types';
 
-// Importe todos os componentes de relatório
+// Importe os componentes de relatório necessários
 import RelatorioListaEstoque from '@/components/RelatorioListaEstoque';
 import RelatorioMovimentacoes from '@/components/RelatorioMovimentacoes';
 
@@ -22,11 +22,12 @@ export default function PaginaRelatorios() {
     fornecedores: new Map(),
     usuarios: new Map(),
     historico: [],
+    projetos: new Map(),
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico'];
+    const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico', 'projetos'];
     
     let loadedCount = 0;
     const unsubscribers = collectionsToListen.map(name => 
