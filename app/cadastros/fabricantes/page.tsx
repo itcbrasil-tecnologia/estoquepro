@@ -49,23 +49,19 @@ export default function PaginaFabricantes() {
     <div>
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Fabricantes</h1>
-        {userRole === 'master' && (
-          <button onClick={() => handleOpenModal()} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center self-end sm:self-auto">
+        <button onClick={() => handleOpenModal()} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center self-start sm:self-auto">
             <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Fabricante
-          </button>
-        )}
+        </button>
       </header>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {items.map(item => (
             <li key={item.id} className="p-4 flex justify-between items-center">
               <span className="font-medium text-gray-800 dark:text-gray-200">{item.nome}</span>
-              {userRole === 'master' && (
-                <div className="space-x-4">
-                  <button onClick={() => handleOpenModal(item)} className="text-yellow-600 hover:text-yellow-500"><FontAwesomeIcon icon={faEdit} /></button>
-                  <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-500"><FontAwesomeIcon icon={faTrash} /></button>
-                </div>
-              )}
+              <div className="space-x-4">
+                <button onClick={() => handleOpenModal(item)} className="text-yellow-600 hover:text-yellow-500"><FontAwesomeIcon icon={faEdit} /></button>
+                <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-500"><FontAwesomeIcon icon={faTrash} /></button>
+              </div>
             </li>
           ))}
         </ul>
