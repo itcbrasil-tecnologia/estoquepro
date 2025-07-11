@@ -14,6 +14,8 @@ interface CardProdutoProps {
   onMove: () => void;
 }
 
+const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.appspot.com/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
+
 export default function CardProduto({ produto, estoque, fabricantes, onEdit, onDetails, onMove }: CardProdutoProps) {
   const { userRole } = useAuth();
 
@@ -33,10 +35,10 @@ export default function CardProduto({ produto, estoque, fabricantes, onEdit, onD
   }
 
   return (
-    <div className="card-item bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-transform transform hover:-translate-y-1">
-      <div className="flex items-start p-4">
+    <div className="card-item bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 flex flex-col">
+      <div className="flex items-start p-4 flex-grow">
         <Image 
-          src={produto.foto_url || 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=N/A'} 
+          src={produto.foto_url || placeholderImage} 
           alt={`Foto de ${produto.nome}`} 
           width={96}
           height={96}
@@ -52,7 +54,7 @@ export default function CardProduto({ produto, estoque, fabricantes, onEdit, onD
           <p className="text-xs text-gray-400 dark:text-gray-500">em {locaisComEstoque} locais</p>
         </div>
       </div>
-      <div className="bg-gray-50 dark:bg-gray-700 p-3 flex justify-end space-x-3">
+      <div className="bg-gray-50 dark:bg-gray-700 p-3 flex justify-end space-x-3 mt-auto">
         <button onClick={onDetails} className="text-sm font-semibold px-3 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/40 transition-colors">Detalhes</button>
         <button onClick={onMove} className="text-sm font-semibold px-3 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-500/20 dark:text-green-300 dark:hover:bg-green-500/40 transition-colors">Movimentar</button>
         <button onClick={onEdit} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/40 transition-colors">Editar</button>

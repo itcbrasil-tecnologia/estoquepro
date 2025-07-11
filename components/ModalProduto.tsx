@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Modal from './Modal';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, storage } from '@/lib/firebase';
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { doc, addDoc, updateDoc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { Produto, CacheData } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import { logAction } from '@/lib/audit'; // Importa a função de log
+import { logAction } from '@/lib/audit';
 
 interface ModalProdutoProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
   const [formData, setFormData] = useState<Omit<Produto, 'id'>>(initialFormData);
   const [documentos, setDocumentos] = useState<{nome: string, link: string}[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -50,6 +53,36 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
     const { name, value } = e.target;
     const isNumber = e.target.type === 'number';
     setFormData(prev => ({ ...prev, [name]: isNumber ? Number(value) : value }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const storageRef = ref(storage, `produtos/${Date.now()}_${file.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(progress);
+      },
+      (error) => {
+        console.error("Upload failed:", error);
+        addToast("Falha no upload da imagem.", "error");
+        setIsUploading(false);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          setFormData(prev => ({ ...prev, foto_url: downloadURL }));
+          addToast("Imagem enviada com sucesso!", "success");
+          setIsUploading(false);
+        });
+      }
+    );
   };
 
   const handleDocChange = (index: number, field: 'nome' | 'link', value: string) => {
@@ -132,7 +165,23 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label><input type="text" name="nome" value={formData.nome || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label><textarea name="descricao" value={formData.descricao || ''} onChange={handleChange} rows={2} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea></div>
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">URL da Foto</label><input type="url" name="foto_url" value={formData.foto_url || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+            
+            <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">URL da Foto</label>
+                <div className="flex items-center space-x-2 mt-1">
+                    <input type="url" name="foto_url" value={formData.foto_url || ''} onChange={handleChange} className="w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
+                    <label htmlFor="image-upload" className="cursor-pointer bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500">
+                        Escolher...
+                    </label>
+                    <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </div>
+                {isUploading && (
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                    </div>
+                )}
+            </div>
+            
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Serial Number</label><input type="text" name="serialNumber" value={formData.serialNumber || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Unidade</label><input type="text" name="unidade" value={formData.unidade || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Modelo</label><input type="text" name="modelo" value={formData.modelo || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
@@ -142,6 +191,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
             <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fornecedor</label><select name="fornecedorId" value={formData.fornecedorId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">{popularSelect(caches.fornecedores, 'Selecione...')}</select></div>
             <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notas</label><textarea name="notas_internas" value={formData.notas_internas || ''} onChange={handleChange} rows={2} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea></div>
         </div>
+        
         <div className="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
             <div className="flex justify-between items-center mb-2">
                 <p className="text-sm font-bold text-gray-600 dark:text-gray-300">Documentos</p>
@@ -157,6 +207,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
                 ))}
             </div>
         </div>
+        
         {!produtoToEdit && (
             <div className="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
                 <p className="text-sm font-bold text-gray-600 dark:text-gray-300">Estoque Inicial (Opcional)</p>
@@ -166,6 +217,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
                 </div>
             </div>
         )}
+        
         <div className="flex justify-between items-center mt-8">
             <div>
                 {produtoToEdit && (

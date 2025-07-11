@@ -15,6 +15,8 @@ interface ProdutoListItemProps {
   onMove: () => void;
 }
 
+const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.appspot.com/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
+
 export default function ProdutoListItem({ produto, estoque, categoria, fornecedor, onEdit, onDetails, onMove }: ProdutoListItemProps) {
   const { userRole } = useAuth();
 
@@ -36,7 +38,7 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
         <td className="py-3 px-4">
             <div className="flex items-center space-x-3">
                 <Image 
-                  src={produto.foto_url || 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=N/A'} 
+                  src={produto.foto_url || placeholderImage} 
                   alt={`Foto de ${produto.nome}`} 
                   width={40}
                   height={40}
