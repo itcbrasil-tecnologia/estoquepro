@@ -38,7 +38,9 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (actionsRef.current && !actionsRef.current.contains(event.target as Node)) {
-        setActionsOpen(false);
+        if (!actionsRef.current.previousElementSibling?.contains(event.target as Node)) {
+            setActionsOpen(false);
+        }
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -46,6 +48,7 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [actionsRef]);
+
 
   return (
     <>
@@ -66,17 +69,16 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
             </div>
         </td>
         <td className="py-3 px-4 hidden md:table-cell">{categoria?.nome || 'N/A'}</td>
+        <td className="py-3 px-4 hidden md:table-cell">{fornecedor?.nome || 'N/A'}</td>
         <td className={`py-3 px-4 text-right font-bold ${corEstoque}`}>{totalEstoque} {produto.unidade}</td>
         <td className="py-3 px-4 text-center">
-            {/* Ações para Desktop */}
             <div className="hidden md:flex justify-end space-x-2">
                 <button onClick={onDetails} className="text-sm font-semibold px-3 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/80 transition-colors">Detalhes</button>
                 <button onClick={onMove} className="text-sm font-semibold px-3 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/80 transition-colors">Movimentar</button>
                 <button onClick={onEdit} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/40 transition-colors">Editar</button>
             </div>
-            {/* Botão para Mobile */}
             <div className="md:hidden">
-                <button onClick={() => setActionsOpen(!actionsOpen)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                <button onClick={(e) => { e.stopPropagation(); setActionsOpen(!actionsOpen); }} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
                     <FontAwesomeIcon icon={faCaretDown} className={`w-4 h-4 text-gray-600 dark:text-gray-300 transition-transform ${actionsOpen ? 'rotate-180' : ''}`} />
                 </button>
             </div>
