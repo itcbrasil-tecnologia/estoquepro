@@ -188,7 +188,7 @@ export default function PaginaEstoque() {
       </div>
       
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {produtosPaginados.map(produto => (
             <CardProduto 
               key={produto.id} 
@@ -206,9 +206,9 @@ export default function PaginaEstoque() {
             <table className="min-w-full text-sm text-left text-gray-700 dark:text-gray-300">
                 <thead className="bg-gray-200 dark:bg-gray-700 text-xs uppercase">
                     <tr>
-                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Produto</th>
-                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Categoria</th>
-                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Fornecedor</th>
+                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Produto</th>
+                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden md:table-cell">Categoria</th>
+                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden md:table-cell">Fornecedor</th>
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-right">Estoque Total</th>
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-center">Ações</th>
                     </tr>
