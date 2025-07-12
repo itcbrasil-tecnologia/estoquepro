@@ -1,11 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { useAuth } from '@/contexts/AuthContext';
 import { Produto, EstoqueItem, Categoria, Fornecedor } from '@/types';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEllipsisV } from '@fortawesome/free-solid-svg-icons';
 
 interface ProdutoListItemProps {
   produto: Produto;
@@ -20,9 +17,7 @@ interface ProdutoListItemProps {
 const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.appspot.com/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
 
 export default function ProdutoListItem({ produto, estoque, categoria, fornecedor, onEdit, onDetails, onMove }: ProdutoListItemProps) {
-  const { userRole } = useAuth();
   const [actionsOpen, setActionsOpen] = useState(false);
-  const actionsRef = useRef<HTMLDivElement>(null);
 
   const totalEstoque = estoque.filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
   
@@ -37,21 +32,9 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
       corEstoque = 'text-red-500';
   }
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (actionsRef.current && !actionsRef.current.contains(event.target as Node)) {
-        setActionsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [actionsRef]);
-
-
   return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-gray-600">
+    <>
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer md:cursor-default" onClick={() => setActionsOpen(!actionsOpen)}>
         <td className="py-3 px-4">
             <div className="flex items-center space-x-3">
                 <Image 
@@ -70,27 +53,18 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
         <td className="py-3 px-4 hidden md:table-cell">{categoria?.nome || 'N/A'}</td>
         <td className="py-3 px-4 hidden md:table-cell">{fornecedor?.nome || 'N/A'}</td>
         <td className={`py-3 px-4 text-right font-bold ${corEstoque}`}>{totalEstoque} {produto.unidade}</td>
-        <td className="py-3 px-4 text-center">
-            {/* Ações para Desktop */}
-            <div className="hidden md:flex justify-end space-x-2">
-                <button onClick={onDetails} className="text-sm font-semibold px-3 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/80 transition-colors">Detalhes</button>
-                <button onClick={onMove} className="text-sm font-semibold px-3 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/80 transition-colors">Movimentar</button>
-                <button onClick={onEdit} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/40 transition-colors">Editar</button>
-            </div>
-            {/* Menu Dropdown para Mobile */}
-            <div className="md:hidden relative" ref={actionsRef}>
-                <button onClick={() => setActionsOpen(!actionsOpen)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-                    <FontAwesomeIcon icon={faEllipsisV} className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                </button>
-                {actionsOpen && (
-                    <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 rounded-md shadow-lg z-10">
-                        <button onClick={onDetails} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Detalhes</button>
-                        <button onClick={onMove} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Movimentar</button>
-                        <button onClick={onEdit} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Editar</button>
-                    </div>
-                )}
-            </div>
-        </td>
-    </tr>
+      </tr>
+      {actionsOpen && (
+        <tr className="md:hidden">
+            <td colSpan={3} className="p-3 bg-gray-50 dark:bg-gray-700/50">
+                <div className="flex justify-start space-x-2">
+                    <button onClick={onDetails} className="text-sm font-semibold px-3 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/80 transition-colors">Detalhes</button>
+                    <button onClick={onMove} className="text-sm font-semibold px-3 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/80 transition-colors">Movimentar</button>
+                    <button onClick={onEdit} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/40 transition-colors">Editar</button>
+                </div>
+            </td>
+        </tr>
+      )}
+    </>
   );
 }
