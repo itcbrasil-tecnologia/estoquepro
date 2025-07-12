@@ -142,7 +142,7 @@ export default function PaginaEstoque() {
                     <FontAwesomeIcon icon={faSort} />
                 </button>
                 {sortDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-20">
+                    <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-20">
                         <button onClick={() => { setSortBy('recentes'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Mais Recentes</button>
                         <button onClick={() => { setSortBy('alfabetica'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Ordem Alfabética</button>
                     </div>
@@ -158,7 +158,7 @@ export default function PaginaEstoque() {
             <button onClick={() => handleOpenModal('add')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center h-10">
                 <FontAwesomeIcon icon={faPlus} className="mr-2" />
                 <span className="hidden sm:inline">Adicionar Produto</span>
-                <span className="sm:hidden">Adicionar</span>
+                <span className="sm:hidden">Produto</span>
             </button>
         </div>
       </header>
