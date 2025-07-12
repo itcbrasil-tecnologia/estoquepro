@@ -25,6 +25,15 @@ const initialFormData: Omit<Produto, 'id' | 'createdAt' | 'updatedAt'> = {
     notas_internas: '', documentos: '[]', estoqueMinimo: 0,
 };
 
+// Função para limpar e padronizar o nome do arquivo
+const sanitizeFilename = (name: string) => {
+    return name
+        .toLowerCase()
+        .replace(/\s+/g, '-') // Substitui espaços por hífens
+        .replace(/[^a-z0-9-.]/g, ''); // Remove caracteres especiais, exceto hífens e pontos
+};
+
+
 export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, onDelete }: ModalProdutoProps) {
   const [formData, setFormData] = useState<Omit<Produto, 'id'>>(initialFormData);
   const [documentos, setDocumentos] = useState<{nome: string, link: string}[]>([]);
@@ -59,10 +68,19 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!formData.nome) {
+        addToast("Por favor, preencha o nome do produto antes de fazer o upload.", "error");
+        return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
-    const storageRef = ref(storage, `produtos/${Date.now()}_${file.name}`);
+    const sanitizedProductName = sanitizeFilename(formData.nome);
+    const fileExtension = file.name.split('.').pop();
+    const newFilename = `${sanitizedProductName}_${Date.now()}.${fileExtension}`;
+    
+    const storageRef = ref(storage, `produtos/${newFilename}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
     uploadTask.on('state_changed',
