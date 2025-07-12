@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { CacheData, Produto } from '@/types';
+import { CacheData } from '@/types';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileCsv } from '@fortawesome/free-solid-svg-icons';
+import Papa from 'papaparse';
 
 interface RelatorioProps {
   caches: CacheData;
@@ -12,7 +15,6 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
   const [fornFiltro, setFornFiltro] = useState('');
   const [localFiltro, setLocalFiltro] = useState('');
   const [fabFiltro, setFabFiltro] = useState('');
-  const [projetoFiltro, setProjetoFiltro] = useState('');
 
   const produtosFiltrados = useMemo(() => {
     let produtosArray = Array.from(caches.produtos.values());
@@ -27,20 +29,6 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
       produtosArray = produtosArray.filter(p => p.fabricanteId === fabFiltro);
     }
     
-    // Lógica para filtrar por projeto
-    if (projetoFiltro) {
-        const localidadesDoProjeto = Array.from(caches.localidades.values())
-            .filter(l => l.projetoId === projetoFiltro)
-            .map(l => l.id);
-
-        const produtosNoProjeto = caches.estoque
-            .filter(e => localidadesDoProjeto.includes(e.localidadeId) && e.quantidade > 0)
-            .map(e => e.produtoId);
-        
-        const produtosNoProjetoSet = new Set(produtosNoProjeto);
-        produtosArray = produtosArray.filter(p => produtosNoProjetoSet.has(p.id));
-    }
-
     if (localFiltro) {
         const produtosNoLocal = caches.estoque
             .filter(e => e.localidadeId === localFiltro && e.quantidade > 0)
@@ -51,10 +39,40 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
     }
 
     return produtosArray;
-  }, [caches, catFiltro, fornFiltro, localFiltro, fabFiltro, projetoFiltro]);
+  }, [caches, catFiltro, fornFiltro, localFiltro, fabFiltro]);
+
+  const handleExport = () => {
+    const dataToExport = produtosFiltrados.map(p => {
+        const totalEstoque = caches.estoque.filter(e => e.produtoId === p.id).reduce((sum, e) => sum + e.quantidade, 0);
+        return {
+            Produto: p.nome,
+            Categoria: caches.categorias.get(p.categoriaId ?? '')?.nome || 'N/A',
+            Fornecedor: caches.fornecedores.get(p.fornecedorId ?? '')?.nome || 'N/A',
+            Fabricante: caches.fabricantes.get(p.fabricanteId ?? '')?.nome || 'N/A',
+            'Estoque Total': totalEstoque,
+            Unidade: p.unidade,
+        };
+    });
+
+    const csv = Papa.unparse(dataToExport);
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "relatorio_estoque_geral.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div>
+      <div className="flex justify-end mb-4">
+        <button onClick={handleExport} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 flex items-center">
+            <FontAwesomeIcon icon={faFileCsv} className="mr-2" /> Exportar para CSV
+        </button>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
         <select onChange={(e) => setProjetoFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
             <option value="">Todos os Projetos</option>
