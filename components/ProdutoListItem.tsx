@@ -15,7 +15,7 @@ interface ProdutoListItemProps {
   onMove: () => void;
 }
 
-const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.firebasestorage.app/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
+const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.appspot.com/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
 
 export default function ProdutoListItem({ produto, estoque, categoria, fornecedor, onEdit, onDetails, onMove }: ProdutoListItemProps) {
   const { userRole } = useAuth();
@@ -44,11 +44,14 @@ export default function ProdutoListItem({ produto, estoque, categoria, fornecedo
                   height={40}
                   className="w-10 h-10 object-cover rounded-md" 
                 />
-                <span className="font-medium text-gray-800 dark:text-gray-200">{produto.nome}</span>
+                <div>
+                    <p className="font-medium text-gray-800 dark:text-gray-200">{produto.nome}</p>
+                    <p className="md:hidden text-xs text-gray-500 dark:text-gray-400">{categoria?.nome || 'N/A'}</p>
+                </div>
             </div>
         </td>
-        <td className="py-3 px-4">{categoria?.nome || 'N/A'}</td>
-        <td className="py-3 px-4">{fornecedor?.nome || 'N/A'}</td>
+        <td className="py-3 px-4 hidden md:table-cell">{categoria?.nome || 'N/A'}</td>
+        <td className="py-3 px-4 hidden md:table-cell">{fornecedor?.nome || 'N/A'}</td>
         <td className={`py-3 px-4 text-right font-bold ${corEstoque}`}>{totalEstoque} {produto.unidade}</td>
         <td className="py-3 px-4 text-right">
             <div className="flex justify-end space-x-3">
