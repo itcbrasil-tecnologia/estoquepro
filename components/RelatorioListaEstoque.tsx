@@ -15,6 +15,7 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
   const [fornFiltro, setFornFiltro] = useState('');
   const [localFiltro, setLocalFiltro] = useState('');
   const [fabFiltro, setFabFiltro] = useState('');
+  const [projetoFiltro, setProjetoFiltro] = useState(''); // Estado adicionado
 
   const produtosFiltrados = useMemo(() => {
     let produtosArray = Array.from(caches.produtos.values());
@@ -29,6 +30,20 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
       produtosArray = produtosArray.filter(p => p.fabricanteId === fabFiltro);
     }
     
+    // Lógica para filtrar por projeto
+    if (projetoFiltro) {
+        const localidadesDoProjeto = Array.from(caches.localidades.values())
+            .filter(l => l.projetoId === projetoFiltro)
+            .map(l => l.id);
+
+        const produtosNoProjeto = caches.estoque
+            .filter(e => localidadesDoProjeto.includes(e.localidadeId) && e.quantidade > 0)
+            .map(e => e.produtoId);
+        
+        const produtosNoProjetoSet = new Set(produtosNoProjeto);
+        produtosArray = produtosArray.filter(p => produtosNoProjetoSet.has(p.id));
+    }
+
     if (localFiltro) {
         const produtosNoLocal = caches.estoque
             .filter(e => e.localidadeId === localFiltro && e.quantidade > 0)
@@ -39,7 +54,7 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
     }
 
     return produtosArray;
-  }, [caches, catFiltro, fornFiltro, localFiltro, fabFiltro]);
+  }, [caches, catFiltro, fornFiltro, localFiltro, fabFiltro, projetoFiltro]);
 
   const handleExport = () => {
     const dataToExport = produtosFiltrados.map(p => {
