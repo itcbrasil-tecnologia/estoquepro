@@ -1,10 +1,12 @@
 [
   {
-    "origin": ["*"],
-    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "origin": [
+      "https://estoquepro.vercel.app",
+      "http://localhost:3000"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE"],
     "responseHeader": [
       "Content-Type",
-      "Content-Length",
       "Authorization"
     ],
     "maxAgeSeconds": 3600
