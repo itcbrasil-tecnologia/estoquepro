@@ -1,9 +1,15 @@
-# EstoquePRO - Sistema de Controle de Estoque Moderno
+# EstoquePRO - Sistema de Controle de Estoque
 
+<p align="center">
+  <img src="public/Logo.svg" alt="ScanPRO Logo" width="250"/>
+</p>
+
+<p align="center">
 ![Badge de Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)
 ![Badge de Tecnologia](https://img.shields.io/badge/tecnologia-Next.js-black?logo=next.js)
 ![Badge de Tecnologia](https://img.shields.io/badge/backend-Firebase-orange?logo=firebase)
 ![Badge de Estilo](https://img.shields.io/badge/estilo-Tailwind%20CSS-blue?logo=tailwind-css)
+</p>
 
 **EstoquePRO** é uma aplicação web completa e responsiva para controle de estoque, desenvolvida com as tecnologias mais modernas para garantir performance, segurança e uma excelente experiência de usuário.
 
