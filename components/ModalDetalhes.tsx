@@ -99,7 +99,7 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
                 </tr>
               </thead>
               <tbody className="divide-y dark:divide-gray-700">
-                {historicoDoProduto.map(h => {
+                {historicoDoProduto.map((h: HistoricoItem) => {
                     const tipoCor = {'ENTRADA': 'text-green-500', 'SAIDA': 'text-red-500', 'TRANSFERENCIA': 'text-blue-500'}[h.tipo] || 'text-gray-400';
                     const origem = h.localidadeOrigemId ? caches.localidades.get(h.localidadeOrigemId)?.nome : 'EXTERNO';
                     const destino = h.localidadeDestinoId ? caches.localidades.get(h.localidadeDestinoId)?.nome : 'EXTERNO';

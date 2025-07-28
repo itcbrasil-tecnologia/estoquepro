@@ -21,7 +21,7 @@ export default function PaginaEstoque() {
   const { userRole } = useAuth();
   const { addToast } = useToast();
   const [caches, setCaches] = useState<CacheData>({
-    produtos: new Map(), estoque: [], localidades: new Map(),
+    produtos: new Map(), estoque: [], unidadesEstoque: [], localidades: new Map(),
     fabricantes: new Map(), categorias: new Map(), fornecedores: new Map(),
     usuarios: new Map(), historico: [], projetos: new Map(),
   });
@@ -47,14 +47,14 @@ export default function PaginaEstoque() {
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico', 'projetos'];
+    const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'unidadesEstoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico', 'projetos'];
     
     let loadedCount = 0;
     const unsubscribers = collectionsToListen.map(name => 
       onSnapshot(collection(db, name), (snapshot) => {
         setCaches((prevCaches: CacheData) => {
           const newCache = { ...prevCaches };
-          if (name === 'estoque' || name === 'historico') {
+          if (name === 'estoque' || name === 'historico' || name === 'unidadesEstoque') {
             newCache[name] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
           } else {
             const newMap = new Map();
@@ -194,6 +194,7 @@ export default function PaginaEstoque() {
               key={produto.id} 
               produto={produto} 
               estoque={caches.estoque}
+              unidadesEstoque={caches.unidadesEstoque || []}
               fabricantes={caches.fabricantes}
               onEdit={() => handleOpenModal('edit', produto)}
               onDetails={() => handleOpenModal('details', produto)}
@@ -209,7 +210,7 @@ export default function PaginaEstoque() {
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Produto</th>
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Categoria</th>
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Fornecedor</th>
-                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-right">Estoque Total</th>
+                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-right">Estoque</th>
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-center">Ações</th>
                     </tr>
                 </thead>
@@ -219,6 +220,7 @@ export default function PaginaEstoque() {
                             key={produto.id}
                             produto={produto}
                             estoque={caches.estoque}
+                            unidadesEstoque={caches.unidadesEstoque || []}
                             categoria={caches.categorias.get(produto.categoriaId || '')}
                             fornecedor={caches.fornecedores.get(produto.fornecedorId || '')}
                             onEdit={() => handleOpenModal('edit', produto)}

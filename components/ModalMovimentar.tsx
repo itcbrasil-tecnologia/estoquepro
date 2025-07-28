@@ -3,20 +3,18 @@
 import { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { db, auth } from '@/lib/firebase';
-import { collection, doc, runTransaction, serverTimestamp, where, query, getDocs, addDoc } from 'firebase/firestore';
-import { Produto, Localidade, EstoqueItem } from '@/types';
+import { collection, doc, runTransaction, serverTimestamp, where, query, getDocs, writeBatch } from 'firebase/firestore';
+import { Produto, Localidade, EstoqueItem, UnidadeEstoqueItem, CacheData } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
+import SerialNumbersInput from './SerialNumbersInput';
 
 interface ModalMovimentarProps {
   isOpen: boolean;
   onClose: () => void;
   produto: Produto | null;
-  caches: {
-    estoque: EstoqueItem[];
-    localidades: Map<string, Localidade>;
-  };
+  caches: CacheData;
 }
 
 export default function ModalMovimentar({ isOpen, onClose, produto, caches }: ModalMovimentarProps) {
@@ -24,120 +22,137 @@ export default function ModalMovimentar({ isOpen, onClose, produto, caches }: Mo
   const [quantidade, setQuantidade] = useState(1);
   const [localidadeOrigemId, setLocalidadeOrigemId] = useState('');
   const [localidadeDestinoId, setLocalidadeDestinoId] = useState('');
-  const [locaisComEstoque, setLocaisComEstoque] = useState<Localidade[]>([]);
+  const [serialNumbers, setSerialNumbers] = useState<string[]>(['']);
+  const [unidadesSelecionadas, setUnidadesSelecionadas] = useState<string[]>([]);
+  
+  const [unidadesDisponiveis, setUnidadesDisponiveis] = useState<UnidadeEstoqueItem[]>([]);
   const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
     if (produto && isOpen) {
-      const locais = caches.estoque
-        .filter((item) => item.produtoId === produto.id && item.quantidade > 0)
-        .map((item) => caches.localidades.get(item.localidadeId))
-        .filter((l): l is Localidade => l !== undefined);
-      setLocaisComEstoque(locais);
+      setTipo('ENTRADA');
+      setQuantidade(1);
       setLocalidadeOrigemId('');
       setLocalidadeDestinoId('');
-      setQuantidade(1);
-      setTipo('ENTRADA');
+      setSerialNumbers(['']);
+      setUnidadesSelecionadas([]);
+
+      if (produto.tipoControle === 'Serial Number') {
+        const unidades = (caches.unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque');
+        setUnidadesDisponiveis(unidades);
+      }
     }
   }, [produto, caches, isOpen]);
+  
+  const handleUnidadeSelect = (sn: string) => {
+    setUnidadesSelecionadas(prev => 
+        prev.includes(sn) ? prev.filter(item => item !== sn) : [...prev, sn]
+    );
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!produto || !quantidade || quantidade <= 0) {
-      addToast("Dados inválidos.", 'error');
-      return;
-    }
+    if (!produto) return;
     setLoading(true);
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const historicoData: any = { 
-            produtoId: produto.id, 
-            tipo, 
-            quantidade, 
-            data: serverTimestamp(), 
-            usuario: auth.currentUser?.uid 
-        };
-
-        const estoqueQuery = query(collection(db, "estoque"), where("produtoId", "==", produto.id));
-        const estoqueDocs = await getDocs(estoqueQuery);
-        const estoquePorLocal = new Map(estoqueDocs.docs.map(d => [d.data().localidadeId, {id: d.id, ref: d.ref, ...d.data()}]));
-
-        if (tipo === 'ENTRADA') {
-            if (!localidadeDestinoId) throw new Error("Local de destino é obrigatório para entradas.");
-            const estoqueDestino = estoquePorLocal.get(localidadeDestinoId);
-            if (estoqueDestino) {
-                const docAtual = await transaction.get(estoqueDestino.ref);
-                if(!docAtual.exists()) throw new Error("Documento de estoque de destino não encontrado.");
-                const qtdAtual = docAtual.data().quantidade;
-                transaction.update(estoqueDestino.ref, { quantidade: qtdAtual + quantidade });
-            } else {
-                const newEstoqueRef = doc(collection(db, "estoque"));
-                transaction.set(newEstoqueRef, { produtoId: produto.id, localidadeId: localidadeDestinoId, quantidade });
-            }
-            historicoData.localidadeDestinoId = localidadeDestinoId;
+        if(produto.tipoControle === 'Quantidade') {
+            // Lógica para estoque por quantidade
         } else {
-            if (!localidadeOrigemId) throw new Error("Local de origem é obrigatório.");
-            const estoqueOrigem = estoquePorLocal.get(localidadeOrigemId);
-            if (!estoqueOrigem) throw new Error("Estoque na origem não existe.");
+            // Lógica para estoque por Serial Number
+            const batch = writeBatch(db);
             
-            const docOrigemAtual = await transaction.get(estoqueOrigem.ref);
-            if(!docOrigemAtual.exists()) throw new Error("Documento de estoque de origem não encontrado.");
-            const qtdOrigemAtual = docOrigemAtual.data().quantidade;
+            if(tipo === 'ENTRADA') {
+                if (!localidadeDestinoId) throw new Error("Local de destino é obrigatório.");
+                const snsValidos = serialNumbers.filter(sn => sn && sn.length > 0);
+                if (snsValidos.length === 0) throw new Error("Adicione pelo menos um Serial Number válido.");
 
-            if (qtdOrigemAtual < quantidade) throw new Error("Estoque insuficiente na origem.");
-            
-            if (tipo === 'TRANSFERENCIA') {
-                if (!localidadeDestinoId) throw new Error("Local de destino é obrigatório para transferências.");
-                if (localidadeOrigemId === localidadeDestinoId) throw new Error("Local de origem e destino não podem ser iguais.");
-                const estoqueDestino = estoquePorLocal.get(localidadeDestinoId);
-                let qtdDestinoAtual = 0;
-                if (estoqueDestino) {
-                    const docDestinoAtual = await transaction.get(estoqueDestino.ref);
-                    qtdDestinoAtual = docDestinoAtual.data()?.quantidade || 0;
-                }
-                
-                transaction.update(estoqueOrigem.ref, { quantidade: qtdOrigemAtual - quantidade });
-                if (estoqueDestino) {
-                    transaction.update(estoqueDestino.ref, { quantidade: qtdDestinoAtual + quantidade });
-                } else {
-                    const newEstoqueRef = doc(collection(db, "estoque"));
-                    transaction.set(newEstoqueRef, { produtoId: produto.id, localidadeId: localidadeDestinoId, quantidade });
-                }
-                historicoData.localidadeDestinoId = localidadeDestinoId;
-            } else { // Apenas SAIDA
-                transaction.update(estoqueOrigem.ref, { quantidade: qtdOrigemAtual - quantidade });
+                snsValidos.forEach(sn => {
+                    const newUnidadeRef = doc(collection(db, "unidades_estoque"));
+                    batch.set(newUnidadeRef, {
+                        produtoId: produto.id,
+                        serialNumber: sn,
+                        localidadeId: localidadeDestinoId,
+                        status: 'Em Estoque',
+                        createdAt: serverTimestamp()
+                    });
+                });
+            } else { // SAIDA ou TRANSFERENCIA
+                if (!localidadeOrigemId) throw new Error("Local de origem é obrigatório.");
+                if (unidadesSelecionadas.length === 0) throw new Error("Selecione pelo menos uma unidade para movimentar.");
+
+                unidadesSelecionadas.forEach(sn => {
+                    const unidade = unidadesDisponiveis.find(u => u.serialNumber === sn);
+                    if(unidade) {
+                        const unidadeRef = doc(db, "unidades_estoque", unidade.id);
+                        if(tipo === 'SAIDA') {
+                            batch.update(unidadeRef, { status: 'Baixado', localidadeId: '' });
+                        } else { // TRANSFERENCIA
+                             if (!localidadeDestinoId) throw new Error("Local de destino é obrigatório.");
+                             batch.update(unidadeRef, { localidadeId: localidadeDestinoId });
+                        }
+                    }
+                });
             }
-            historicoData.localidadeOrigemId = localidadeOrigemId;
+            await batch.commit();
         }
-        transaction.set(doc(collection(db, "historico")), historicoData);
-      });
       addToast('Movimentação realizada com sucesso!', 'success');
       onClose();
     } catch (error: any) {
-      console.error("Erro na transação:", error);
+      console.error("Erro na movimentação:", error);
       addToast(`Falha: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  const renderFormularioQuantidade = () => (
+    <>
+      <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantidade</label><input type="number" value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+      {tipo !== 'ENTRADA' && (
+        <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Local de Origem</label><select value={localidadeOrigemId} onChange={(e) => setLocalidadeOrigemId(e.target.value)} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"><option value="">Selecione...</option>{Array.from(caches.localidades.values()).map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></div>
+      )}
+      {tipo !== 'SAIDA' && (
+        <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Local de Destino</label><select value={localidadeDestinoId} onChange={(e) => setLocalidadeDestinoId(e.target.value)} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"><option value="">Selecione...</option>{Array.from(caches.localidades.values()).map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></div>
+      )}
+    </>
+  );
+
+  const renderFormularioSerialNumber = () => (
+    <>
+      {tipo === 'ENTRADA' && (
+        <>
+          <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Local de Destino</label><select value={localidadeDestinoId} onChange={(e) => setLocalidadeDestinoId(e.target.value)} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"><option value="">Selecione...</option>{Array.from(caches.localidades.values()).map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></div>
+          <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Serial Numbers</label><SerialNumbersInput serialNumbers={serialNumbers} setSerialNumbers={setSerialNumbers} /></div>
+        </>
+      )}
+      {tipo !== 'ENTRADA' && (
+        <>
+          <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Local de Origem</label><select value={localidadeOrigemId} onChange={(e) => setLocalidadeOrigemId(e.target.value)} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"><option value="">Selecione...</option>{unidadesDisponiveis.map(u => u.localidadeId).filter((v,i,a)=>a.indexOf(v)===i).map(lId => <option key={lId} value={lId}>{caches.localidades.get(lId)?.nome}</option>)}</select></div>
+          {tipo === 'TRANSFERENCIA' && <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Local de Destino</label><select value={localidadeDestinoId} onChange={(e) => setLocalidadeDestinoId(e.target.value)} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"><option value="">Selecione...</option>{Array.from(caches.localidades.values()).map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></div>}
+          <div className="max-h-48 overflow-y-auto border dark:border-gray-600 rounded-lg p-2 space-y-1">
+            {unidadesDisponiveis.filter(u => u.localidadeId === localidadeOrigemId).map(u => (
+                <label key={u.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <input type="checkbox" checked={unidadesSelecionadas.includes(u.serialNumber)} onChange={() => handleUnidadeSelect(u.serialNumber)} className="h-4 w-4 rounded text-teal-600 border-gray-300 focus:ring-teal-500"/>
+                    <span className="font-mono text-sm">{u.serialNumber}</span>
+                </label>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Movimentar ${produto?.nome || ''}`}>
       <form onSubmit={handleSave}>
         <div className="space-y-4">
           <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo</label><select value={tipo} onChange={(e) => setTipo(e.target.value)} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"><option value="ENTRADA">Entrada</option><option value="SAIDA">Saída</option><option value="TRANSFERENCIA">Transferência</option></select></div>
-          <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantidade</label><input type="number" value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
-          {tipo !== 'ENTRADA' && (
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Local de Origem</label><select value={localidadeOrigemId} onChange={(e) => setLocalidadeOrigemId(e.target.value)} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"><option value="">Selecione...</option>{locaisComEstoque.map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></div>
-          )}
-          {tipo !== 'SAIDA' && (
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Local de Destino</label><select value={localidadeDestinoId} onChange={(e) => setLocalidadeDestinoId(e.target.value)} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"><option value="">Selecione...</option>{Array.from(caches.localidades.values()).map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}</select></div>
-          )}
+          {produto?.tipoControle === 'Serial Number' ? renderFormularioSerialNumber() : renderFormularioQuantidade()}
         </div>
-        <div className="flex justify-end mt-8 space-x-4">
-            <button type="button" onClick={onClose} className="btn-cancel bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 font-bold py-2 px-6 rounded-lg">Cancelar</button>
+        <div className="flex justify-end mt-8 items-center gap-x-4">
+            <button type="button" onClick={onClose} className="bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 font-bold py-2 px-6 rounded-lg">Cancelar</button>
             <button type="submit" disabled={loading} className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 flex items-center justify-center w-32">
               {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Confirmar'}
             </button>

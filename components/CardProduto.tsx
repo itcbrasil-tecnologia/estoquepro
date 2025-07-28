@@ -3,11 +3,12 @@
 import React from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
-import { Produto, EstoqueItem, Fabricante } from '@/types';
+import { Produto, EstoqueItem, Fabricante, UnidadeEstoqueItem } from '@/types';
 
 interface CardProdutoProps {
   produto: Produto;
   estoque: EstoqueItem[];
+  unidadesEstoque: UnidadeEstoqueItem[];
   fabricantes: Map<string, Fabricante>;
   onEdit: () => void;
   onDetails: () => void;
@@ -16,11 +17,17 @@ interface CardProdutoProps {
 
 const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.firebasestorage.app/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
 
-export default function CardProduto({ produto, estoque, fabricantes, onEdit, onDetails, onMove }: CardProdutoProps) {
+export default function CardProduto({ produto, estoque, unidadesEstoque, fabricantes, onEdit, onDetails, onMove }: CardProdutoProps) {
   const { userRole } = useAuth();
 
-  const totalEstoque = estoque.filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
-  const locaisComEstoque = estoque.filter(e => e.produtoId === produto.id && e.quantidade > 0).length;
+  const totalEstoque = produto.tipoControle === 'Serial Number'
+    ? unidadesEstoque.filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').length
+    : estoque.filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
+
+  const locaisComEstoque = produto.tipoControle === 'Serial Number'
+    ? new Set(unidadesEstoque.filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').map(u => u.localidadeId)).size
+    : estoque.filter(e => e.produtoId === produto.id && e.quantidade > 0).length;
+    
   const fabricante = produto.fabricanteId ? fabricantes.get(produto.fabricanteId) : null;
   
   let corEstoque = 'text-green-500';
