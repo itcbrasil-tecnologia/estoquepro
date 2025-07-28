@@ -1,10 +1,6 @@
 # EstoquePRO - Sistema de Controle de Estoque
 
 <p align="center">
-  <img src="public/Logo.svg" alt="ScanPRO Logo" width="250"/>
-</p>
-
-<p align="center">
   <img src="public/Logo.svg" alt="EstoquePRO Logo" width="250"/>
 </p>
 

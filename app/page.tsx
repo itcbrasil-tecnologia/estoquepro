@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image'; // Importa o componente Image
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBoxesStacked } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
@@ -41,9 +40,16 @@ export default function LoginPage() {
     <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
       <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <div className="text-center">
-          <FontAwesomeIcon icon={faBoxesStacked} className="text-5xl text-blue-600 dark:text-blue-400" />
-          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">EstoquePRO</h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Acesse sua conta para continuar</p>
+          {/* LOGO ATUALIZADA AQUI */}
+          <Image 
+            src="/Logo.svg" 
+            alt="Logo EstoquePRO" 
+            width={180} 
+            height={48} 
+            className="mx-auto"
+            priority
+          />
+          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Acesse sua conta para continuar</p>
         </div>
         <form onSubmit={handleLogin} className="mt-8 space-y-6">
           <div className="rounded-md shadow-sm -space-y-px">
