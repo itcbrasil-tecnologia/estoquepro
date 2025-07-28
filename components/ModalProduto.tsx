@@ -22,7 +22,7 @@ interface ModalProdutoProps {
 const initialFormData: Omit<Produto, 'id' | 'createdAt' | 'updatedAt'> = {
     nome: '', unidade: '', descricao: '', foto_url: '', serialNumber: '',
     modelo: '', categoriaId: '', fabricanteId: '', fornecedorId: '',
-    notas_internas: '', documentos: '[]', estoqueMinimo: 0,
+    notas_internas: '', documentos: '[]', estoqueMinimo: 0, tipoControle: 'Quantidade',
 };
 
 // Função para limpar e padronizar o nome do arquivo
@@ -45,7 +45,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
   useEffect(() => {
     if (isOpen) {
         if (produtoToEdit) {
-            setFormData(produtoToEdit);
+            setFormData({ ...initialFormData, ...produtoToEdit });
             try {
                 setDocumentos(produtoToEdit.documentos ? JSON.parse(produtoToEdit.documentos) : []);
             } catch {
@@ -161,7 +161,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
         addToast('Produto adicionado com sucesso!', 'success');
       }
       onClose();
-    } catch (error: any) {
+    } catch (error: any)      {
       console.error("Erro ao salvar produto:", error);
       addToast(error.message || 'Falha ao salvar produto.', 'error');
     } finally {
@@ -182,6 +182,12 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
       <form onSubmit={handleSave} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label><input type="text" name="nome" value={formData.nome || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
+            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Controle</label>
+                <div className="mt-2 flex gap-x-6">
+                    <label className="flex items-center"><input type="radio" name="tipoControle" value="Quantidade" checked={formData.tipoControle === 'Quantidade'} onChange={handleChange} className="h-4 w-4 text-teal-600 border-gray-300 focus:ring-teal-500" /> <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Quantidade</span></label>
+                    <label className="flex items-center"><input type="radio" name="tipoControle" value="Serial Number" checked={formData.tipoControle === 'Serial Number'} onChange={handleChange} className="h-4 w-4 text-teal-600 border-gray-300 focus:ring-teal-500" /> <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Serial Number</span></label>
+                </div>
+            </div>
             <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label><textarea name="descricao" value={formData.descricao || ''} onChange={handleChange} rows={2} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea></div>
             
             <div className="md:col-span-2">
@@ -195,12 +201,11 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
                 </div>
                 {isUploading && (
                     <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
-                        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                        <div className="bg-teal-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
                     </div>
                 )}
             </div>
             
-            <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Serial Number</label><input type="text" name="serialNumber" value={formData.serialNumber || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Unidade</label><input type="text" name="unidade" value={formData.unidade || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Modelo</label><input type="text" name="modelo" value={formData.modelo || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
             <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Estoque Mínimo</label><input type="number" name="estoqueMinimo" value={formData.estoqueMinimo || 0} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/></div>
@@ -213,7 +218,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
         <div className="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
             <div className="flex justify-between items-center mb-2">
                 <p className="text-sm font-bold text-gray-600 dark:text-gray-300">Documentos</p>
-                <button type="button" onClick={addDocumentoField} className="text-sm bg-blue-100 text-blue-700 font-semibold py-1 px-3 rounded-md hover:bg-blue-200">Adicionar</button>
+                <button type="button" onClick={addDocumentoField} className="text-sm bg-teal-100 text-teal-700 font-semibold py-1 px-3 rounded-md hover:bg-teal-200">Adicionar</button>
             </div>
             <div id="documentosContainer" className="space-y-2">
                 {documentos.map((doc, index) => (
@@ -246,7 +251,7 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
             </div>
             <div className="flex items-center gap-x-4">
                 <button type="button" onClick={onClose} className="bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 font-bold py-2 px-6 rounded-lg">Cancelar</button>
-                <button type="submit" disabled={loading} className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 flex items-center justify-center w-28">
+                <button type="submit" disabled={loading} className="bg-teal-600 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 flex items-center justify-center w-28">
                   {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Salvar'}
                 </button>
             </div>

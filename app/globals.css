@@ -10,7 +10,7 @@
 }
 
 .nav-btn-active {
-    @apply px-4 py-2 rounded-md text-base font-medium bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-colors;
+    @apply px-4 py-2 rounded-md text-base font-medium bg-teal-600 text-white shadow-sm hover:bg-teal-700 transition-colors;
 }
 
 /*
@@ -21,12 +21,7 @@
 }
 
 .report-nav-btn-active {
-    @apply px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-colors;
-}
-
-.filter-active {
-    background-color: #e0e7ff; /* Exemplo de cor para filtro ativo */
-    border-color: #4f46e5;
+    @apply px-4 py-2 rounded-md text-sm font-medium bg-teal-600 text-white shadow-sm hover:bg-teal-700 transition-colors;
 }
 
 /* Animação para o Toast */

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image'; // Importa o componente Image
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -74,13 +74,12 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-3">
           <Link href="/dashboard" className="flex items-center space-x-2">
-            {/* LOGO ATUALIZADA AQUI */}
             <Image 
                 src="/Logo.svg" 
                 alt="Logo EstoquePRO" 
                 width={140} 
                 height={32} 
-                priority // Ajuda a carregar a logo mais rápido
+                priority
             />
           </Link>
           
