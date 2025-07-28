@@ -12,7 +12,7 @@ config.autoAddCss = false;
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sistema de Controle de Estoque",
+  title: "EstoquePRO",
   description: "Gerencie seu estoque de forma eficiente",
   icons: {
     icon: '/favicon.ico',
