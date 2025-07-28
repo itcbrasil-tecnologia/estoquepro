@@ -21,12 +21,12 @@ export default function CardProduto({ produto, estoque, unidadesEstoque, fabrica
   const { userRole } = useAuth();
 
   const totalEstoque = produto.tipoControle === 'Serial Number'
-    ? unidadesEstoque.filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').length
-    : estoque.filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
+    ? (unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').length
+    : (estoque || []).filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
 
   const locaisComEstoque = produto.tipoControle === 'Serial Number'
-    ? new Set(unidadesEstoque.filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').map(u => u.localidadeId)).size
-    : estoque.filter(e => e.produtoId === produto.id && e.quantidade > 0).length;
+    ? new Set((unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').map(u => u.localidadeId)).size
+    : (estoque || []).filter(e => e.produtoId === produto.id && e.quantidade > 0).length;
     
   const fabricante = produto.fabricanteId ? fabricantes.get(produto.fabricanteId) : null;
   
