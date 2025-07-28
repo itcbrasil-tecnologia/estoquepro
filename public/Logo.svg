@@ -1,20 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 60">
-  <g id="Camada_1" data-name="Camada 1">
-    <g>
-      <path d="M48.67,23.11V3.22h-26.53v19.9h-13.26v23.21h53.05v-23.21h-13.26Z" fill="#006f72"/>
-      <path d="M25.46,23.11V6.53h6.63v3.32h6.63v-3.32h6.63v16.58h-19.9Z" fill="#008f95"/>
-      <g>
-        <path d="M32.09,43.01H12.19v-16.58h6.63v3.32h6.63v-3.32h6.63v16.58Z" fill="#008f95"/>
-        <path d="M58.61,43.01h-19.9v-16.58h6.63v3.32h6.63v-3.32h6.63v16.58Z" fill="#008f95"/>
-      </g>
-      <path d="M8.88,56.78h9.95v-3.32h33.16v3.32h9.95v-6.63H8.88v6.63Z" fill="#008f95"/>
-    </g>
+<svg id="Camada_2" data-name="Camada 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 60">
+  <path d="M40.92,23.83V6.03h-23.74v17.81H5.31v20.78h47.49v-20.78h-11.87Z" fill="#006f72"/>
+  <path d="M20.15,23.83v-14.84h5.94v2.97h5.94v-2.97h5.94v14.84h-17.81Z" fill="#008f95"/>
+  <g>
+    <path d="M26.08,41.64H8.28v-14.84h5.94v2.97h5.94v-2.97h5.94v14.84Z" fill="#008f95"/>
+    <path d="M49.83,41.64h-17.81v-14.84h5.94v2.97h5.94v-2.97h5.94v14.84Z" fill="#008f95"/>
   </g>
-  <g id="Camada_2" data-name="Camada 2">
-    <g isolation="isolate">
-      <text transform="translate(65.05 41.24)" fill="#008f95" font-family="Arial-BoldMT, Arial" font-size="17.81" font-weight="700" isolation="isolate"><tspan x="0" y="0">Estoque</tspan></text>
-      <text transform="translate(134.98 41.09)" fill="#006f72" font-family="Arial-BoldMT, Arial" font-size="16.82" font-weight="700" isolation="isolate"><tspan x="0" y="0">PRO</tspan></text>
-    </g>
+  <path d="M5.31,53.97h8.9v-2.97h29.68v2.97h8.9v-5.94H5.31v5.94Z" fill="#008f95"/>
+  <g isolation="isolate">
+    <text transform="translate(57.37 37.73)" fill="#008f95" font-family="Arial-BoldMT, Arial" font-size="20.14" font-weight="700" isolation="isolate"><tspan x="0" y="0">Estoque</tspan></text>
+    <text transform="translate(136.41 37.57)" fill="#006f72" font-family="Arial-BoldMT, Arial" font-size="19.02" font-weight="700" isolation="isolate"><tspan x="0" y="0">PRO</tspan></text>
   </g>
 </svg>
