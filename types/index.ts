@@ -14,7 +14,7 @@ export interface Produto {
   notas_internas?: string;
   documentos?: string; // JSON string
   estoqueMinimo?: number;
-  tipoControle?: 'Quantidade' | 'Serial Number'; // NOVO CAMPO
+  tipoControle?: 'Quantidade' | 'Serial Number';
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -25,14 +25,17 @@ export interface EstoqueItem {
   quantidade: number; 
   localidadeId: string; 
 }
-export interface UnidadeEstoqueItem { // NOVA INTERFACE PARA ITENS SERIALIZADOS
+
+export interface UnidadeEstoqueItem {
     id: string;
     produtoId: string;
     serialNumber: string;
     localidadeId: string;
     projetoId?: string;
     status: 'Em Estoque' | 'Alocado' | 'Em Manutenção' | 'Baixado';
+    createdAt?: Timestamp;
 }
+
 export interface Localidade { id: string; nome: string; cor?: string; projetoId?: string; }
 export interface Fabricante { id: string; nome: string; }
 export interface Categoria { id: string; nome: string; }
@@ -44,6 +47,7 @@ export interface HistoricoItem {
   produtoId: string; 
   tipo: string; 
   quantidade: number; 
+  serialNumbers?: string[];
   localidadeOrigemId?: string; 
   localidadeDestinoId?: string; 
   data: any; 
@@ -62,7 +66,7 @@ export interface AuditLogItem {
 export interface CacheData {
     produtos: Map<string, Produto>;
     estoque: EstoqueItem[];
-    unidadesEstoque?: UnidadeEstoqueItem[]; // NOVO
+    unidadesEstoque: UnidadeEstoqueItem[];
     localidades: Map<string, Localidade>;
     fabricantes: Map<string, Fabricante>;
     categorias: Map<string, Categoria>;

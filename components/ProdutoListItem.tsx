@@ -1,151 +1,104 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import Modal from './Modal';
-import { Produto, CacheData, Localidade, UnidadeEstoqueItem, HistoricoItem } from '@/types';
+import { Produto, EstoqueItem, Categoria, Fornecedor, UnidadeEstoqueItem } from '@/types';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCaretDown } from '@fortawesome/free-solid-svg-icons';
 
-interface ModalDetalhesProps {
-  isOpen: boolean;
-  onClose: () => void;
-  produto: Produto | null;
-  caches: CacheData;
+interface ProdutoListItemProps {
+  produto: Produto;
+  estoque: EstoqueItem[];
+  unidadesEstoque: UnidadeEstoqueItem[];
+  categoria?: Categoria;
+  fornecedor?: Fornecedor;
+  onEdit: () => void;
+  onDetails: () => void;
+  onMove: () => void;
 }
 
-const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.firebasestorage.app/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
+const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.appspot.com/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
 
-export default function ModalDetalhes({ isOpen, onClose, produto, caches }: ModalDetalhesProps) {
-  if (!produto) return null;
+export default function ProdutoListItem({ produto, estoque, unidadesEstoque, categoria, fornecedor, onEdit, onDetails, onMove }: ProdutoListItemProps) {
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsRef = useRef<HTMLTableRowElement>(null);
 
-  const estoqueDoProduto = caches.estoque.filter(e => e.produtoId === produto.id && e.quantidade > 0);
-  const unidadesDoProduto = (caches.unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque');
+  const totalEstoque = produto.tipoControle === 'Serial Number'
+    ? (unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').length
+    : (estoque || []).filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
   
-  const unidadesPorLocal = unidadesDoProduto.reduce((acc, unidade) => {
-    const local = caches.localidades.get(unidade.localidadeId);
-    const localNome = local?.nome || 'Desconhecido';
-    if (!acc[localNome]) {
-      acc[localNome] = { local, sns: [] };
-    }
-    acc[localNome].sns.push(unidade.serialNumber);
-    return acc;
-  }, {} as Record<string, { local: Localidade | undefined, sns: string[] }>);
-
-  const fabricante = produto.fabricanteId ? caches.fabricantes.get(produto.fabricanteId) : null;
-  const categoria = produto.categoriaId ? caches.categorias.get(produto.categoriaId) : null;
-  const fornecedor = produto.fornecedorId ? caches.fornecedores.get(produto.fornecedorId) : null;
-  
-  let documentos = [];
-  try {
-    documentos = produto.documentos ? JSON.parse(produto.documentos) : [];
-  } catch (e) {
-    console.error("Erro ao parsear documentos:", e);
+  let corEstoque = 'text-green-500';
+  if (produto.estoqueMinimo && totalEstoque < produto.estoqueMinimo) {
+    corEstoque = 'text-yellow-500';
+  }
+  if (produto.estoqueMinimo && totalEstoque <= produto.estoqueMinimo / 2) {
+    corEstoque = 'text-red-500';
+  }
+  if (totalEstoque <= 0) {
+      corEstoque = 'text-red-500';
   }
 
-  const historicoDoProduto = caches.historico
-    .filter(h => h.produtoId === produto.id)
-    .sort((a, b) => (b.data?.toDate() || 0) - (a.data?.toDate() || 0));
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (actionsRef.current && !actionsRef.current.contains(event.target as Node)) {
+        if (!actionsRef.current.previousElementSibling?.contains(event.target as Node)) {
+            setActionsOpen(false);
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [actionsRef]);
+
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={produto.nome}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <Image 
-            src={produto.foto_url || placeholderImage} 
-            alt={`Foto de ${produto.nome}`} 
-            width={400}
-            height={400}
-            className="rounded-lg w-full h-auto object-cover shadow-md"
-          />
-        </div>
-        <div className="md:col-span-2 space-y-3 text-sm text-gray-600 dark:text-gray-300">
-          <p><strong>Tipo de Controle:</strong> <span className="font-semibold text-gray-800 dark:text-gray-100">{produto.tipoControle || 'Quantidade'}</span></p>
-          <p><strong>Descrição:</strong> <span className="text-gray-800 dark:text-gray-100">{produto.descricao || 'N/A'}</span></p>
-          <p><strong>Fabricante/Modelo:</strong> <span className="text-gray-800 dark:text-gray-100">{fabricante?.nome || 'N/A'} / {produto.modelo || 'N/A'}</span></p>
-          <p><strong>Categoria:</strong> <span className="text-gray-800 dark:text-gray-100">{categoria?.nome || 'N/A'}</span></p>
-          <p><strong>Fornecedor:</strong> <span className="text-gray-800 dark:text-gray-100">{fornecedor?.nome || 'N/A'}</span></p>
-          <p><strong>Notas:</strong> <span className="text-gray-800 dark:text-gray-100">{produto.notas_internas || 'N/A'}</span></p>
-          
-          <div className="mt-4">
-            <h4 className="font-bold text-md mb-2 text-gray-800 dark:text-white">Estoque por Localidade</h4>
-            <div className="space-y-2 text-sm">
-              {produto.tipoControle === 'Serial Number' ? (
-                Object.entries(unidadesPorLocal).length > 0 ? Object.entries(unidadesPorLocal).map(([localNome, data]) => (
-                  <div key={localNome}>
-                    <div className="flex items-center">
-                        <span style={{ backgroundColor: data.local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
-                        <p className="font-semibold text-gray-700 dark:text-gray-200">{localNome} ({data.sns.length})</p>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1 pl-5">
-                      {data.sns.map(sn => <span key={sn} className="text-xs font-mono bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{sn}</span>)}
-                    </div>
-                  </div>
-                )) : <p className="text-gray-500 dark:text-gray-400">Sem estoque.</p>
-              ) : (
-                estoqueDoProduto.length > 0 ? estoqueDoProduto.map(item => {
-                  const local = caches.localidades.get(item.localidadeId);
-                  return (
-                    <div key={item.id} className="flex justify-between items-center text-gray-800 dark:text-gray-200">
-                      <div className="flex items-center">
-                        <span style={{ backgroundColor: local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
-                        <span>{local?.nome || 'Desconhecido'}</span>
-                      </div>
-                      <span className="font-semibold">{item.quantidade} {produto.unidade}</span>
-                    </div>
-                  )
-                }) : <p className="text-gray-500 dark:text-gray-400">Sem estoque.</p>
-              )}
+    <>
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-600">
+        <td className="py-3 px-4">
+            <div className="flex items-center space-x-3">
+                <Image 
+                  src={produto.foto_url || placeholderImage} 
+                  alt={`Foto de ${produto.nome}`} 
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 object-cover rounded-md" 
+                />
+                <div>
+                    <p className="font-medium text-gray-800 dark:text-gray-200">{produto.nome}</p>
+                    <p className="md:hidden text-xs text-gray-500 dark:text-gray-400">{categoria?.nome || 'N/A'}</p>
+                </div>
             </div>
-          </div>
-
-          <div className="mt-4">
-            <h4 className="font-bold text-md mb-2 text-gray-800 dark:text-white">Documentos</h4>
-            <div className="flex flex-wrap gap-2">
-              {documentos.length > 0 ? documentos.map((doc: {link: string, nome: string}, index: number) => (
-                <a href={doc.link} key={index} target="_blank" rel="noopener noreferrer" className="bg-blue-100 text-blue-700 text-sm font-semibold px-3 py-1 rounded-full hover:bg-blue-200">{doc.nome}</a>
-              )) : <p className="text-gray-500 dark:text-gray-400">Nenhum documento.</p>}
+        </td>
+        <td className="py-3 px-4 hidden md:table-cell">{categoria?.nome || 'N/A'}</td>
+        <td className="py-3 px-4 hidden md:table-cell">{fornecedor?.nome || 'N/A'}</td>
+        <td className={`py-3 px-4 text-right font-bold ${corEstoque}`}>{totalEstoque} {produto.unidade}</td>
+        <td className="py-3 px-4 text-center">
+            <div className="hidden md:flex justify-end space-x-2">
+                <button onClick={onDetails} className="text-sm font-semibold px-3 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/80 transition-colors">Detalhes</button>
+                <button onClick={onMove} className="text-sm font-semibold px-3 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/80 transition-colors">Movimentar</button>
+                <button onClick={onEdit} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/40 transition-colors">Editar</button>
             </div>
-          </div>
-        </div>
-      </div>
-      <div className="mt-8">
-        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Histórico de Movimentação</h3>
-        <div className="overflow-x-auto">
-          {historicoDoProduto.length === 0 ? (
-            <p className="text-center text-gray-500 dark:text-gray-400 p-4">Nenhum histórico de movimentação para este produto.</p>
-          ) : (
-            <table className="min-w-full bg-white dark:bg-gray-800 text-sm text-left text-gray-700 dark:text-gray-300">
-              <thead className="bg-gray-200 dark:bg-gray-700 text-xs uppercase">
-                <tr>
-                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Data</th>
-                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Tipo</th>
-                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-right">Qtd</th>
-                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Origem</th>
-                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Destino</th>
-                  <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Usuário</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y dark:divide-gray-700">
-                {historicoDoProduto.map((h: HistoricoItem) => {
-                    const tipoCor = {'ENTRADA': 'text-green-500', 'SAIDA': 'text-red-500', 'TRANSFERENCIA': 'text-blue-500'}[h.tipo] || 'text-gray-400';
-                    const origem = h.localidadeOrigemId ? caches.localidades.get(h.localidadeOrigemId)?.nome : 'EXTERNO';
-                    const destino = h.localidadeDestinoId ? caches.localidades.get(h.localidadeDestinoId)?.nome : 'EXTERNO';
-                    const usuario = caches.usuarios.get(h.usuario)?.username || 'Desconhecido';
-                    return (
-                        <tr key={h.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <td className="py-3 px-4">{h.data ? h.data.toDate().toLocaleString('pt-BR') : 'N/A'}</td>
-                            <td className={`py-3 px-4 font-bold ${tipoCor}`}>{h.tipo}</td>
-                            <td className="py-3 px-4 text-right">{h.quantidade}</td>
-                            <td className="py-3 px-4">{origem}</td>
-                            <td className="py-3 px-4">{destino}</td>
-                            <td className="py-3 px-4">{usuario}</td>
-                        </tr>
-                    );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-    </Modal>
+            <div className="md:hidden">
+                <button onClick={(e) => { e.stopPropagation(); setActionsOpen(!actionsOpen); }} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <FontAwesomeIcon icon={faCaretDown} className={`w-4 h-4 text-gray-600 dark:text-gray-300 transition-transform ${actionsOpen ? 'rotate-180' : ''}`} />
+                </button>
+            </div>
+        </td>
+      </tr>
+      {actionsOpen && (
+        <tr className="md:hidden" ref={actionsRef}>
+            <td colSpan={4} className="p-3 bg-gray-50 dark:bg-gray-700/50">
+                <div className="flex justify-start items-center space-x-2">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Ações:</span>
+                    <button onClick={onDetails} className="text-sm font-semibold px-3 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/80 transition-colors">Detalhes</button>
+                    <button onClick={onMove} className="text-sm font-semibold px-3 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/80 transition-colors">Movimentar</button>
+                    <button onClick={onEdit} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/40 transition-colors">Editar</button>
+                </div>
+            </td>
+        </tr>
+      )}
+    </>
   );
 }

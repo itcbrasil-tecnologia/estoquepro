@@ -1,16 +1,18 @@
+// app/components/TabelaEstoqueProximo.tsx
 'use client';
 
-import { Produto, EstoqueItem } from '@/types';
+import { Produto, EstoqueItem, UnidadeEstoqueItem } from '@/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 
 interface TabelaProps {
   produtos: Produto[];
   estoque: EstoqueItem[];
+  unidadesEstoque: UnidadeEstoqueItem[];
   onDetailsClick: (produto: Produto) => void;
 }
 
-export default function TabelaEstoqueProximo({ produtos, estoque, onDetailsClick }: TabelaProps) {
+export default function TabelaEstoqueProximo({ produtos, estoque, unidadesEstoque, onDetailsClick }: TabelaProps) {
   if (produtos.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center">
@@ -33,9 +35,9 @@ export default function TabelaEstoqueProximo({ produtos, estoque, onDetailsClick
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {produtos.map(produto => {
-              const totalEstoque = estoque
-                  .filter(e => e.produtoId === produto.id)
-                  .reduce((sum, e) => sum + e.quantidade, 0);
+              const totalEstoque = produto.tipoControle === 'Serial Number'
+                ? (unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').length
+                : (estoque || []).filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
 
               return (
                 <tr key={produto.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">

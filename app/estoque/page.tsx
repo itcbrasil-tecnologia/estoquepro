@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, onSnapshot, doc, writeBatch } from 'firebase/firestore';
 import CardProduto from '@/components/CardProduto';
 import ModalProduto from '@/components/ModalProduto';
 import ModalDetalhes from '@/components/ModalDetalhes';
@@ -14,16 +14,24 @@ import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faTh, faList, faSearch, faSort, faFilter } from '@fortawesome/free-solid-svg-icons';
+import { logAction } from '@/lib/audit';
 
 const ITENS_POR_PAGINA = 24;
 
 export default function PaginaEstoque() {
-  const { userRole } = useAuth();
+  const { user, userRole } = useAuth();
   const { addToast } = useToast();
   const [caches, setCaches] = useState<CacheData>({
-    produtos: new Map(), estoque: [], unidadesEstoque: [], localidades: new Map(),
-    fabricantes: new Map(), categorias: new Map(), fornecedores: new Map(),
-    usuarios: new Map(), historico: [], projetos: new Map(),
+    produtos: new Map(),
+    estoque: [],
+    unidadesEstoque: [],
+    localidades: new Map(),
+    fabricantes: new Map(),
+    categorias: new Map(),
+    fornecedores: new Map(),
+    usuarios: new Map(),
+    historico: [],
+    projetos: new Map(),
   });
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,29 +39,27 @@ export default function PaginaEstoque() {
   const [sortBy, setSortBy] = useState('recentes');
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
-
   const [filtroBusca, setFiltroBusca] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroFornecedor, setFiltroFornecedor] = useState('');
   const [filtroLocalidade, setFiltroLocalidade] = useState('');
-  
   const [modalState, setModalState] = useState({
     produto: false,
     detalhes: false,
     movimentar: false,
   });
-  
   const [itemSelecionado, setItemSelecionado] = useState<Produto | null>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const collectionsToListen: (keyof CacheData)[] = ['produtos', 'estoque', 'unidadesEstoque', 'localidades', 'fabricantes', 'categorias', 'fornecedores', 'usuarios', 'historico', 'projetos'];
-    
     let loadedCount = 0;
-    const unsubscribers = collectionsToListen.map(name => 
+
+    const unsubscribers = collectionsToListen.map(name =>
       onSnapshot(collection(db, name), (snapshot) => {
         setCaches((prevCaches: CacheData) => {
           const newCache = { ...prevCaches };
+
           if (name === 'estoque' || name === 'historico' || name === 'unidadesEstoque') {
             newCache[name] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
           } else {
@@ -63,61 +69,108 @@ export default function PaginaEstoque() {
           }
           return newCache;
         });
+        
         loadedCount++;
-        if(loadedCount >= collectionsToListen.length) {
-            setLoading(false);
+        if (loadedCount >= collectionsToListen.length) {
+          setLoading(false);
         }
       })
     );
-
+    
     function handleClickOutside(event: MouseEvent) {
       if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
         setSortDropdownOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
 
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-        unsubscribers.forEach(unsub => unsub());
-        document.removeEventListener("mousedown", handleClickOutside);
+      unsubscribers.forEach(unsub => unsub());
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const handleOpenModal = (tipo: 'add' | 'edit' | 'details' | 'move', produto: Produto | null = null) => {
     setItemSelecionado(produto);
-    if (tipo === 'add' || tipo === 'edit') setModalState(s => ({...s, produto: true}));
-    if (tipo === 'details') setModalState(s => ({...s, detalhes: true}));
-    if (tipo === 'move') setModalState(s => ({...s, movimentar: true}));
+    if (tipo === 'add' || tipo === 'edit') setModalState(s => ({ ...s, produto: true }));
+    if (tipo === 'details') setModalState(s => ({ ...s, detalhes: true }));
+    if (tipo === 'move') setModalState(s => ({ ...s, movimentar: true }));
   };
-  
+
   const handleCloseModals = () => {
     setModalState({ produto: false, detalhes: false, movimentar: false });
     setItemSelecionado(null);
   };
 
   const handleDeleteProduto = async (id: string) => {
-    // ... (lógica de exclusão permanece a mesma)
+    if (userRole !== 'master') {
+      addToast("Apenas administradores podem excluir produtos.", 'error');
+      return;
+    }
+    
+    const produto = caches.produtos.get(id);
+    if (!produto) return;
+
+    let totalEstoque = 0;
+    if (produto.tipoControle === 'Serial Number') {
+      totalEstoque = (caches.unidadesEstoque || []).filter(u => u.produtoId === id && u.status === 'Em Estoque').length;
+    } else {
+      totalEstoque = (caches.estoque || []).filter(e => e.produtoId === id).reduce((sum, e) => sum + e.quantidade, 0);
+    }
+
+    if (totalEstoque > 0) {
+      addToast(`Não é possível excluir: ainda há ${totalEstoque} ${produto.unidade}(s) em estoque.`, 'error');
+      return;
+    }
+
+    if (confirm(`Tem certeza que deseja excluir o produto "${produto.nome}"? Todo o seu histórico e unidades serão perdidos.`)) {
+      const batch = writeBatch(db);
+      
+      batch.delete(doc(db, "produtos", id));
+
+      if (produto.tipoControle === 'Serial Number') {
+        (caches.unidadesEstoque || []).filter(u => u.produtoId === id).forEach(item => batch.delete(doc(db, "unidadesEstoque", item.id)));
+      } else {
+        (caches.estoque || []).filter(e => e.produtoId === id).forEach(item => batch.delete(doc(db, "estoque", item.id)));
+      }
+
+      (caches.historico || []).filter(h => h.produtoId === id).forEach(item => batch.delete(doc(db, "historico", item.id)));
+      
+      try {
+        await batch.commit();
+        await logAction('PRODUTO_EXCLUIDO', { id, nome: produto.nome });
+        addToast("Produto excluído com sucesso!", 'success');
+        handleCloseModals();
+      } catch (error) {
+        console.error("Erro ao excluir produto:", error);
+        addToast("Ocorreu um erro ao tentar excluir o produto.", 'error');
+      }
+    }
   };
 
   const produtosProcessados = useMemo(() => {
     let produtosArray = Array.from(caches.produtos.values());
 
     if (filtroBusca) {
-        produtosArray = produtosArray.filter(p => 
-            p.nome.toLowerCase().includes(filtroBusca.toLowerCase())
-        );
-    }
-    if (filtroCategoria) produtosArray = produtosArray.filter(p => p.categoriaId === filtroCategoria);
-    if (filtroFornecedor) produtosArray = produtosArray.filter(p => p.fornecedorId === filtroFornecedor);
-    if (filtroLocalidade) {
-        const produtosNoLocal = caches.estoque.filter(e => e.localidadeId === filtroLocalidade && e.quantidade > 0).map(e => e.produtoId);
-        produtosArray = produtosArray.filter(p => produtosNoLocal.includes(p.id));
+      produtosArray = produtosArray.filter(p =>
+        p.nome.toLowerCase().includes(filtroBusca.toLowerCase())
+      );
     }
 
+    if (filtroCategoria) produtosArray = produtosArray.filter(p => p.categoriaId === filtroCategoria);
+    if (filtroFornecedor) produtosArray = produtosArray.filter(p => p.fornecedorId === filtroFornecedor);
+
+    if (filtroLocalidade) {
+        const produtosNoLocalQtde = caches.estoque.filter(e => e.localidadeId === filtroLocalidade && e.quantidade > 0).map(e => e.produtoId);
+        const produtosNoLocalSN = (caches.unidadesEstoque || []).filter(u => u.localidadeId === filtroLocalidade && u.status === 'Em Estoque').map(u => u.produtoId);
+        const produtosNoLocal = new Set([...produtosNoLocalQtde, ...produtosNoLocalSN]);
+        produtosArray = produtosArray.filter(p => produtosNoLocal.has(p.id));
+    }
+    
     if (sortBy === 'recentes') {
-        produtosArray.sort((a, b) => (b.createdAt?.toDate().getTime() || 0) - (a.createdAt?.toDate().getTime() || 0));
+      produtosArray.sort((a, b) => (b.createdAt?.toDate().getTime() || 0) - (a.createdAt?.toDate().getTime() || 0));
     } else if (sortBy === 'alfabetica') {
-        produtosArray.sort((a, b) => a.nome.localeCompare(b.nome));
+      produtosArray.sort((a, b) => a.nome.localeCompare(b.nome));
     }
 
     return produtosArray;
@@ -142,27 +195,34 @@ export default function PaginaEstoque() {
                     <FontAwesomeIcon icon={faSort} />
                 </button>
                 {sortDropdownOpen && (
-                    <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-20">
-                        <button onClick={() => { setSortBy('recentes'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Mais Recentes</button>
-                        <button onClick={() => { setSortBy('alfabetica'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Ordem Alfabética</button>
-                    </div>
+                <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg z-20">
+                    <button onClick={() => { setSortBy('recentes'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Mais Recentes</button>
+                    <button onClick={() => { setSortBy('alfabetica'); setSortDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600">Ordem Alfabética</button>
+                </div>
                 )}
             </div>
+
             <button onClick={() => setIsFiltersVisible(!isFiltersVisible)} className="p-2 h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-lg flex md:hidden items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
                 <FontAwesomeIcon icon={faFilter} />
             </button>
+
             <div className="flex">
-                <button onClick={() => setViewMode('grid')} className={`p-2 h-10 w-10 rounded-l-lg transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faTh} /></button>
-                <button onClick={() => setViewMode('list')} className={`p-2 h-10 w-10 rounded-r-lg transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}><FontAwesomeIcon icon={faList} /></button>
+                <button onClick={() => setViewMode('grid')} className={`rounded-l-lg ${viewMode === 'grid' ? 'btn-view-mode-active' : 'btn-view-mode'}`}>
+                    <FontAwesomeIcon icon={faTh} />
+                </button>
+                <button onClick={() => setViewMode('list')} className={`rounded-r-lg ${viewMode === 'list' ? 'btn-view-mode-active' : 'btn-view-mode'}`}>
+                    <FontAwesomeIcon icon={faList} />
+                </button>
             </div>
-            <button onClick={() => handleOpenModal('add')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center h-10">
+
+            <button onClick={() => handleOpenModal('add')} className="btn-primary h-10">
                 <FontAwesomeIcon icon={faPlus} className="mr-2" />
                 <span className="hidden sm:inline">Adicionar Produto</span>
                 <span className="sm:hidden">Produto</span>
             </button>
         </div>
       </header>
-
+      
       <div className={`${isFiltersVisible ? 'block' : 'hidden'} md:block bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -178,11 +238,11 @@ export default function PaginaEstoque() {
               <select onChange={(e) => setFiltroLocalidade(e.target.value)} className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todas</option>{Array.from(caches.localidades.values()).map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select>
             </div>
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar Produto</label>
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pt-6">
-                  <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
-              </span>
-              <input type="text" placeholder="Buscar..." onChange={(e) => setFiltroBusca(e.target.value)} className="p-2 pl-10 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"/>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar Produto</label>
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pt-6">
+                    <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                </span>
+                <input type="text" placeholder="Buscar..." onChange={(e) => setFiltroBusca(e.target.value)} className="p-2 pl-10 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"/>
             </div>
         </div>
       </div>
@@ -190,9 +250,9 @@ export default function PaginaEstoque() {
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {produtosPaginados.map(produto => (
-            <CardProduto 
-              key={produto.id} 
-              produto={produto} 
+            <CardProduto
+              key={produto.id}
+              produto={produto}
               estoque={caches.estoque}
               unidadesEstoque={caches.unidadesEstoque || []}
               fabricantes={caches.fabricantes}
@@ -208,15 +268,15 @@ export default function PaginaEstoque() {
                 <thead className="bg-gray-200 dark:bg-gray-700 text-xs uppercase">
                     <tr>
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Produto</th>
-                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Categoria</th>
-                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Fornecedor</th>
+                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden md:table-cell">Categoria</th>
+                        <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden md:table-cell">Fornecedor</th>
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-right">Estoque</th>
                         <th className="py-3 px-4 font-medium text-gray-600 dark:text-gray-300 text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y dark:divide-gray-700">
                     {produtosPaginados.map(produto => (
-                        <ProdutoListItem 
+                        <ProdutoListItem
                             key={produto.id}
                             produto={produto}
                             estoque={caches.estoque}
@@ -233,7 +293,7 @@ export default function PaginaEstoque() {
         </div>
       )}
 
-      <Paginacao 
+      <Paginacao
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
@@ -246,12 +306,14 @@ export default function PaginaEstoque() {
         caches={caches}
         onDelete={handleDeleteProduto}
       />
+      
       <ModalDetalhes
         isOpen={modalState.detalhes}
         onClose={handleCloseModals}
         produto={itemSelecionado}
         caches={caches}
       />
+      
       <ModalMovimentar
         isOpen={modalState.movimentar}
         onClose={handleCloseModals}

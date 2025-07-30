@@ -15,41 +15,41 @@ interface CardProdutoProps {
   onMove: () => void;
 }
 
-const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.firebasestorage.app/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
+const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.appspot.com/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
 
 export default function CardProduto({ produto, estoque, unidadesEstoque, fabricantes, onEdit, onDetails, onMove }: CardProdutoProps) {
   const { userRole } = useAuth();
 
-  const totalEstoque = produto.tipoControle === 'Serial Number'
-    ? (unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').length
-    : (estoque || []).filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
+  const totalEstoque =
+    produto.tipoControle === 'Serial Number'
+      ? (unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').length
+      : (estoque || []).filter(e => e.produtoId === produto.id).reduce((sum, e) => sum + e.quantidade, 0);
 
-  const locaisComEstoque = produto.tipoControle === 'Serial Number'
-    ? new Set((unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').map(u => u.localidadeId)).size
-    : (estoque || []).filter(e => e.produtoId === produto.id && e.quantidade > 0).length;
-    
+  const locaisComEstoque =
+    produto.tipoControle === 'Serial Number'
+      ? new Set((unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque').map(u => u.localidadeId)).size
+      : (estoque || []).filter(e => e.produtoId === produto.id && e.quantidade > 0).length;
+
   const fabricante = produto.fabricanteId ? fabricantes.get(produto.fabricanteId) : null;
-  
+
   let corEstoque = 'text-green-500';
-  if (produto.estoqueMinimo && totalEstoque < produto.estoqueMinimo) {
-    corEstoque = 'text-yellow-500';
-  }
-  if (produto.estoqueMinimo && totalEstoque <= produto.estoqueMinimo / 2) {
-    corEstoque = 'text-red-500';
-  }
   if (totalEstoque <= 0) {
-      corEstoque = 'text-red-500';
+    corEstoque = 'text-red-500';
+  } else if (produto.estoqueMinimo && totalEstoque <= produto.estoqueMinimo / 2) {
+    corEstoque = 'text-red-500';
+  } else if (produto.estoqueMinimo && totalEstoque < produto.estoqueMinimo) {
+    corEstoque = 'text-yellow-500';
   }
 
   return (
     <div className="card-item bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 flex flex-col">
       <div className="flex items-start p-4 flex-grow">
-        <Image 
-          src={produto.foto_url || placeholderImage} 
-          alt={`Foto de ${produto.nome}`} 
+        <Image
+          src={produto.foto_url || placeholderImage}
+          alt={`Foto de ${produto.nome}`}
           width={96}
           height={96}
-          className="w-24 h-24 object-cover rounded-md mr-4" 
+          className="w-24 h-24 object-cover rounded-md mr-4"
         />
         <div className="flex-grow">
           <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{produto.nome}</h3>
@@ -61,10 +61,11 @@ export default function CardProduto({ produto, estoque, unidadesEstoque, fabrica
           <p className="text-xs text-gray-400 dark:text-gray-500">em {locaisComEstoque} locais</p>
         </div>
       </div>
-      <div className="bg-gray-50 dark:bg-gray-700 p-3 flex justify-end space-x-3 mt-auto">
-        <button onClick={onDetails} className="text-sm font-semibold px-3 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/40 transition-colors">Detalhes</button>
-        <button onClick={onMove} className="text-sm font-semibold px-3 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-500/20 dark:text-green-300 dark:hover:bg-green-500/40 transition-colors">Movimentar</button>
-        <button onClick={onEdit} className="text-sm font-semibold px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/40 transition-colors">Editar</button>
+
+      <div className="bg-gray-50 dark:bg-gray-700/50 p-3 flex justify-end gap-3 mt-auto">
+        <button onClick={onDetails} className="btn-action btn-action-details">Detalhes</button>
+        <button onClick={onMove} className="btn-action btn-action-move">Movimentar</button>
+        <button onClick={onEdit} className="btn-action btn-action-edit">Editar</button>
       </div>
     </div>
   );

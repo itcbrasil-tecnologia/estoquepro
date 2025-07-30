@@ -97,7 +97,7 @@ export default function ModalUsuario({ isOpen, onClose, userToEdit }: ModalUsuar
         {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
         <div className="flex justify-end mt-8 space-x-4">
             <button type="button" onClick={onClose} className="btn-cancel bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 font-bold py-2 px-6 rounded-lg">Cancelar</button>
-            <button type="submit" disabled={loading} className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 flex items-center justify-center w-28">
+            <button type="submit" disabled={loading} className="btn-save w-28">
               {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Salvar'}
             </button>
         </div>

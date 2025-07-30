@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Modal from './Modal';
-import { Produto, CacheData, HistoricoItem } from '@/types';
+import { Produto, CacheData, Localidade, UnidadeEstoqueItem, HistoricoItem } from '@/types';
 
 interface ModalDetalhesProps {
   isOpen: boolean;
@@ -12,15 +12,23 @@ interface ModalDetalhesProps {
   caches: CacheData;
 }
 
-const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.appspot.com/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
+const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.firebasestorage.app/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
 
 export default function ModalDetalhes({ isOpen, onClose, produto, caches }: ModalDetalhesProps) {
   if (!produto) return null;
 
   const estoqueDoProduto = caches.estoque.filter(e => e.produtoId === produto.id && e.quantidade > 0);
-  const historicoDoProduto = caches.historico
-    .filter(h => h.produtoId === produto.id)
-    .sort((a, b) => (b.data?.toDate() || 0) - (a.data?.toDate() || 0));
+  const unidadesDoProduto = (caches.unidadesEstoque || []).filter(u => u.produtoId === produto.id && u.status === 'Em Estoque');
+  
+  const unidadesPorLocal = unidadesDoProduto.reduce((acc, unidade) => {
+    const local = caches.localidades.get(unidade.localidadeId);
+    const localNome = local?.nome || 'Desconhecido';
+    if (!acc[localNome]) {
+      acc[localNome] = { local, sns: [] };
+    }
+    acc[localNome].sns.push(unidade.serialNumber);
+    return acc;
+  }, {} as Record<string, { local: Localidade | undefined, sns: string[] }>);
 
   const fabricante = produto.fabricanteId ? caches.fabricantes.get(produto.fabricanteId) : null;
   const categoria = produto.categoriaId ? caches.categorias.get(produto.categoriaId) : null;
@@ -32,6 +40,10 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
   } catch (e) {
     console.error("Erro ao parsear documentos:", e);
   }
+
+  const historicoDoProduto = caches.historico
+    .filter(h => h.produtoId === produto.id)
+    .sort((a, b) => (b.data?.toDate() || 0) - (a.data?.toDate() || 0));
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={produto.nome}>
@@ -46,7 +58,7 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
           />
         </div>
         <div className="md:col-span-2 space-y-3 text-sm text-gray-600 dark:text-gray-300">
-          <p><strong>Serial Number:</strong> <span className="font-mono text-gray-800 dark:text-gray-100">{produto.serialNumber || 'N/A'}</span></p>
+          <p><strong>Tipo de Controle:</strong> <span className="font-semibold text-gray-800 dark:text-gray-100">{produto.tipoControle || 'Quantidade'}</span></p>
           <p><strong>Descrição:</strong> <span className="text-gray-800 dark:text-gray-100">{produto.descricao || 'N/A'}</span></p>
           <p><strong>Fabricante/Modelo:</strong> <span className="text-gray-800 dark:text-gray-100">{fabricante?.nome || 'N/A'} / {produto.modelo || 'N/A'}</span></p>
           <p><strong>Categoria:</strong> <span className="text-gray-800 dark:text-gray-100">{categoria?.nome || 'N/A'}</span></p>
@@ -55,19 +67,33 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
           
           <div className="mt-4">
             <h4 className="font-bold text-md mb-2 text-gray-800 dark:text-white">Estoque por Localidade</h4>
-            <div className="space-y-1 text-sm">
-              {estoqueDoProduto.length > 0 ? estoqueDoProduto.map(item => {
-                const local = caches.localidades.get(item.localidadeId);
-                return (
-                  <div key={item.id} className="flex justify-between items-center text-gray-800 dark:text-gray-200">
+            <div className="space-y-2 text-sm">
+              {produto.tipoControle === 'Serial Number' ? (
+                Object.entries(unidadesPorLocal).length > 0 ? Object.entries(unidadesPorLocal).map(([localNome, data]) => (
+                  <div key={localNome}>
                     <div className="flex items-center">
-                      <span style={{ backgroundColor: local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
-                      <span>{local?.nome || 'Desconhecido'}</span>
+                        <span style={{ backgroundColor: data.local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
+                        <p className="font-semibold text-gray-700 dark:text-gray-200">{localNome} ({data.sns.length})</p>
                     </div>
-                    <span className="font-semibold">{item.quantidade} {produto.unidade}</span>
+                    <div className="flex flex-wrap gap-1 mt-1 pl-5">
+                      {data.sns.map(sn => <span key={sn} className="text-xs font-mono bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{sn}</span>)}
+                    </div>
                   </div>
-                )
-              }) : <p className="text-gray-500 dark:text-gray-400">Sem estoque.</p>}
+                )) : <p className="text-gray-500 dark:text-gray-400">Sem estoque.</p>
+              ) : (
+                estoqueDoProduto.length > 0 ? estoqueDoProduto.map(item => {
+                  const local = caches.localidades.get(item.localidadeId);
+                  return (
+                    <div key={item.id} className="flex justify-between items-center text-gray-800 dark:text-gray-200">
+                      <div className="flex items-center">
+                        <span style={{ backgroundColor: local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
+                        <span>{local?.nome || 'Desconhecido'}</span>
+                      </div>
+                      <span className="font-semibold">{item.quantidade} {produto.unidade}</span>
+                    </div>
+                  )
+                }) : <p className="text-gray-500 dark:text-gray-400">Sem estoque.</p>
+              )}
             </div>
           </div>
 
@@ -75,7 +101,7 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
             <h4 className="font-bold text-md mb-2 text-gray-800 dark:text-white">Documentos</h4>
             <div className="flex flex-wrap gap-2">
               {documentos.length > 0 ? documentos.map((doc: {link: string, nome: string}, index: number) => (
-                <a href={doc.link} key={index} target="_blank" rel="noopener noreferrer" className="bg-blue-100 text-blue-700 text-sm font-semibold px-3 py-1 rounded-full hover:bg-blue-200">{doc.nome}</a>
+                <a href={doc.link} key={index} target="_blank" rel="noopener noreferrer" className="bg-teal-100 text-teal-700 text-sm font-semibold px-3 py-1 rounded-full hover:bg-teal-200">{doc.nome}</a>
               )) : <p className="text-gray-500 dark:text-gray-400">Nenhum documento.</p>}
             </div>
           </div>

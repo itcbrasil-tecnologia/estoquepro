@@ -61,7 +61,7 @@ export default function PaginaLocalidades() {
     <div>
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Localidades</h1>
-        <button onClick={() => handleOpenModal()} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 flex items-center self-start sm:self-auto">
+        <button onClick={() => handleOpenModal()} className="btn-primary self-start sm:self-auto">
             <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Localidade
         </button>
       </header>
