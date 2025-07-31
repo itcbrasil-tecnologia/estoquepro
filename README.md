@@ -5,6 +5,8 @@
 </p>
 
 <p align="center">
+<img src="https://img.shields.io/badge/status-ativo-success" alt="status">
+<img src="https://img.shields.io/badge/versão-1.1.0-blue" alt="versao">
 <img src="https://img.shields.io/badge/framework-Next.js-black?logo=next.js" alt="Next.js">
 <img src="https://img.shields.io/badge/backend-Firebase-orange?logo=firebase" alt="Next.js">
 <img src="https://img.shields.io/badge/estilo-Tailwind%20CSS-blue?logo=tailwind-css" alt="Next.js">
@@ -16,97 +18,115 @@ O sistema foi projetado para ser intuitivo e poderoso, permitindo que equipes ge
 
 ---
 
-## ✨ Funcionalidades Principais
+## 📋 Sumário
 
-O sistema conta com um conjunto robusto de funcionalidades prontas para produção:
-
-* **Dashboard Inteligente:**
-    * Cards de resumo com indicadores-chave (Total de Produtos, Itens com Estoque Baixo, etc.).
-    * Lista de movimentações recentes para acompanhamento rápido.
-    * Gráfico visual com os produtos de maior volume em estoque.
-    * Alertas visuais para produtos que atingiram o estoque mínimo ou crítico.
-
-* **Gestão Completa de Produtos:**
-    * CRUD completo (Criar, Ler, Atualizar, Excluir) para produtos.
-    * Upload de imagens direto da interface para o **Firebase Storage**, com nomenclatura padronizada.
-    * Filtros avançados por categoria, fornecedor, localidade e busca por nome.
-    * Múltiplos modos de visualização (grade de cards ou lista detalhada).
-    * Paginação para lidar com grandes volumes de produtos.
-
-* **Controle de Acesso e Segurança:**
-    * Sistema de autenticação com dois níveis de permissão: **Master** e **Comum**.
-    * Menu de perfil com opção para o usuário alterar a própria senha via e-mail.
-    * **Log de Auditoria Completo:** Registra todas as ações importantes (criação, edição, exclusão) realizadas no sistema, visível apenas para usuários Master.
-
-* **Administração Centralizada:**
-    * Páginas de cadastro dedicadas para **Projetos, Localidades, Fornecedores, Categorias e Fabricantes**.
-    * Localidades com seletor de cor para fácil identificação visual.
-    * Gestão de usuários (criar, editar perfil, desativar) para administradores.
-
-* **Relatórios e Exportação:**
-    * Página de relatórios consolidada com filtros avançados.
-    * Relatório de Estoque Geral e de Movimentações.
-    * Funcionalidade para **exportar relatórios para CSV**, pronta para análise em planilhas.
-
-* **Interface e Usabilidade (UX):**
-    * Design totalmente **responsivo**, adaptado para desktop, tablets e celulares.
-    * **Tema Claro e Escuro** com persistência da preferência do usuário.
-    * Sistema de notificações "toast" para feedback visual das ações.
-    * Interface limpa e intuitiva, construída com foco na experiência do usuário.
+* [Sobre o Projeto](#-sobre-o-projeto)
+* [Principais Funcionalidades](#-principais-funcionalidades)
+* [Stack de Tecnologia](#-stack-de-tecnologia)
+* [Como Rodar o Projeto Localmente](#-como-rodar-o-projeto-localmente)
+* [Variáveis de Ambiente](#️-variáveis-de-ambiente)
 
 ---
+
+## 📖 Sobre o Projeto
+
+**EstoquePRO** é uma aplicação web full-stack projetada para oferecer uma solução completa e intuitiva para o gerenciamento de inventário. O sistema permite o controle detalhado de produtos, movimentações de estoque (entrada, saída, transferência) e cadastros auxiliares, tudo centralizado em uma interface limpa e responsiva.
+
+Construído com foco em alta performance e qualidade de código, o projeto utiliza **Next.js** para o frontend e **Firebase** para o backend, garantindo escalabilidade, segurança e desenvolvimento em tempo real.
+
+---
+
+## ✨ Principais Funcionalidades
+
+* **🔐 Autenticação Segura:** Sistema de login com dois níveis de permissão (Master e Comum).
+* **📊 Dashboard Inteligente:** Visualização rápida do estado do estoque com cards de resumo (Total de Produtos, Estoque Baixo, Próximo do Mínimo) e últimas movimentações.
+* **📦 Gestão de Estoque Híbrido:** Suporte completo para controle de produtos por **Quantidade** ou por **Número de Série (Serial Number)**.
+* **⚙️ CRUD Completo:** Gerenciamento total de Produtos, Projetos, Localidades, Fornecedores, Categorias e Fabricantes.
+* **👥 Gestão de Usuários:** Interface para o administrador (Master) adicionar, editar e desativar usuários.
+* **📜 Log de Auditoria:** Rastreamento de todas as ações importantes realizadas no sistema para máxima segurança e controle.
+* **📄 Relatórios Avançados:** Geração de relatórios de estoque e movimentações com filtros dinâmicos e opção de **exportação para CSV**.
+* **📱 Design Responsivo:** Interface 100% adaptável para desktops, tablets e celulares.
+* **🎨 Tema Light & Dark:** Alternância de tema com persistência da preferência do usuário.
+* **🔔 Notificações Toast:** Feedback visual imediato para as ações do usuário.
 
 ## 🚀 Stack de Tecnologia
 
-* **Framework:** [Next.js](https://nextjs.org/) (com App Router)
-* **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
-* **Estilização:** [Tailwind CSS](https://tailwindcss.com/)
-* **Backend & Banco de Dados:** [Firebase](https://firebase.google.com/) (Firestore, Authentication, Storage)
-* **Gráficos:** [Recharts](https://recharts.org/)
-* **Deploy:** [Vercel](https://vercel.com/)
+A aplicação foi construída utilizando as seguintes tecnologias:
+
+* **Frontend:**
+    * [Next.js](https://nextjs.org/) (App Router)
+    * [React](https://reactjs.org/)
+    * [TypeScript](https://www.typescriptlang.org/)
+    * [Tailwind CSS](https://tailwindcss.com/)
+* **Backend & Banco de Dados:**
+    * [Firebase](https://firebase.google.com/) (Firestore, Authentication, Storage)
+* **Bibliotecas Adicionais:**
+    * [Recharts](https://recharts.org/) (Gráficos)
+    * [Fort Awesome (FontAwesome)](https://fontawesome.com/) (Ícones)
+    * [Papaparse](https://www.papaparse.com/) (Exportação CSV)
+* **Deployment:**
+    * [Vercel](https://vercel.com/)
 
 ---
 
-## ⚙️ Como Rodar o Projeto Localmente
+## 💻 Como Rodar o Projeto Localmente
 
-Para configurar e rodar o projeto no seu ambiente de desenvolvimento, siga os passos abaixo.
+Siga os passos abaixo para configurar e rodar o EstoquePRO em seu ambiente de desenvolvimento.
 
 ### Pré-requisitos
 
-* [Node.js](https://nodejs.org/) (versão 18 ou superior)
-* Um projeto Firebase configurado com Authentication, Firestore e Storage habilitados.
+* [Node.js](https://nodejs.org/en/) (versão 18.x ou superior)
+* [Yarn](https://yarnpkg.com/) ou [npm](https://www.npmjs.com/)
+* Uma conta no [Firebase](https://firebase.google.com/) para configurar o backend.
 
 ### Instalação
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/seu-usuario/estoquepro.git](https://github.com/seu-usuario/estoquepro.git)
-    cd estoquepro
+    git clone [https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git](https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git)
     ```
 
-2.  **Instale as dependências:**
+2.  **Navegue até o diretório do projeto:**
+    ```bash
+    cd estoque-pro
+    ```
+
+3.  **Instale as dependências:**
     ```bash
     npm install
+    # ou
+    yarn install
     ```
 
-3.  **Configure as Variáveis de Ambiente:**
-    * No arquivo `lib/firebase.js`, substitua o objeto `firebaseConfig` pelas chaves do seu próprio projeto Firebase.
+4.  **Configure as Variáveis de Ambiente:**
+    * Renomeie o arquivo `.env.local.example` para `.env.local`.
+    * Preencha o arquivo `.env.local` com as credenciais do seu projeto Firebase. Veja a seção [Variáveis de Ambiente](#️-variáveis-de-ambiente) para mais detalhes.
 
-4.  **Rode o servidor de desenvolvimento:**
+5.  **Rode o servidor de desenvolvimento:**
     ```bash
     npm run dev
+    # ou
+    yarn dev
     ```
 
-5.  Abra [http://localhost:3000](http://localhost:3000) no seu navegador para ver o resultado.
+6.  Abra [http://localhost:3000](http://localhost:3000) no seu navegador para ver a aplicação.
 
 ---
 
-## 📂 Estrutura do Projeto
+## 🛠️ Variáveis de Ambiente
 
-A estrutura de arquivos foi organizada para manter o código limpo e escalável:
+Para que a aplicação se conecte ao Firebase, é essencial criar um arquivo `.env.local` na raiz do projeto. Você pode obter essas credenciais nas configurações do seu projeto no console do Firebase.
 
-* **/app:** Contém todas as rotas e páginas da aplicação, seguindo o padrão do App Router do Next.js.
-* **/components:** Armazena todos os componentes React reutilizáveis (modais, cards, tabelas, etc.).
-* **/contexts:** Gerencia os estados globais da aplicação, como autenticação, tema e notificações.
-* **/lib:** Inclui arquivos de configuração e helpers, como a inicialização do Firebase e a função de log de auditoria.
-* **/types:** Centraliza todas as definições de interface do TypeScript, garantindo a consistência dos dados em toda a aplicação.
+Crie o arquivo `.env.local` e adicione as seguintes variáveis:
+
+```env
+# Credenciais do Firebase
+NEXT_PUBLIC_FIREBASE_API_KEY=SUA_CHAVE_AQUI
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=SEU_DOMINIO_AQUI
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=SEU_ID_DE_PROJETO_AQUI
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=SEU_STORAGE_BUCKET_AQUI
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=SEU_SENDER_ID_AQUI
+NEXT_PUBLIC_FIREBASE_APP_ID=SEU_APP_ID_AQUI
+```
+
+---
