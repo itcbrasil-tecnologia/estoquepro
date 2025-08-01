@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { CacheData } from '@/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileCsv } from '@fortawesome/free-solid-svg-icons';
+import { faFileCsv, faUndo } from '@fortawesome/free-solid-svg-icons';
 import Papa from 'papaparse';
 
 interface RelatorioProps {
@@ -19,31 +19,24 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
 
   const produtosFiltrados = useMemo(() => {
     let produtosArray = Array.from(caches.produtos.values());
-
     if (catFiltro) produtosArray = produtosArray.filter(p => p.categoriaId === catFiltro);
     if (fornFiltro) produtosArray = produtosArray.filter(p => p.fornecedorId === fornFiltro);
     if (fabFiltro) produtosArray = produtosArray.filter(p => p.fabricanteId === fabFiltro);
-    
     if (projetoFiltro) {
       const localidadesDoProjeto = Array.from(caches.localidades.values())
         .filter(l => l.projetoId === projetoFiltro)
         .map(l => l.id);
-      
       const produtosNoProjetoQtde = caches.estoque.filter(e => localidadesDoProjeto.includes(e.localidadeId) && e.quantidade > 0).map(e => e.produtoId);
       const produtosNoProjetoSN = (caches.unidadesEstoque || []).filter(u => u.projetoId && localidadesDoProjeto.includes(u.localidadeId) && u.status === 'Em Estoque').map(u => u.produtoId);
       const produtosNoProjetoSet = new Set([...produtosNoProjetoQtde, ...produtosNoProjetoSN]);
-      
       produtosArray = produtosArray.filter(p => produtosNoProjetoSet.has(p.id));
     }
-
     if (localFiltro) {
       const produtosNoLocalQtde = caches.estoque.filter(e => e.localidadeId === localFiltro && e.quantidade > 0).map(e => e.produtoId);
       const produtosNoLocalSN = (caches.unidadesEstoque || []).filter(u => u.localidadeId === localFiltro && u.status === 'Em Estoque').map(u => u.produtoId);
       const produtosNoLocalSet = new Set([...produtosNoLocalQtde, ...produtosNoLocalSN]);
-      
       produtosArray = produtosArray.filter(p => produtosNoLocalSet.has(p.id));
     }
-    
     return produtosArray;
   }, [caches, catFiltro, fornFiltro, localFiltro, fabFiltro, projetoFiltro]);
 
@@ -52,18 +45,12 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
       const totalEstoque = p.tipoControle === 'Serial Number'
         ? (caches.unidadesEstoque || []).filter(u => u.produtoId === p.id && u.status === 'Em Estoque').length
         : (caches.estoque || []).filter(e => e.produtoId === p.id).reduce((sum, e) => sum + e.quantidade, 0);
-
       return {
-        'Produto': p.nome,
-        'Tipo de Controle': p.tipoControle,
-        'Categoria': caches.categorias.get(p.categoriaId ?? '')?.nome || 'N/A',
-        'Fornecedor': caches.fornecedores.get(p.fornecedorId ?? '')?.nome || 'N/A',
-        'Fabricante': caches.fabricantes.get(p.fabricanteId ?? '')?.nome || 'N/A',
-        'Estoque Total': totalEstoque,
-        'Unidade': p.unidade,
+        'Produto': p.nome, 'Tipo de Controle': p.tipoControle, 'Categoria': caches.categorias.get(p.categoriaId ?? '')?.nome || 'N/A',
+        'Fornecedor': caches.fornecedores.get(p.fornecedorId ?? '')?.nome || 'N/A', 'Fabricante': caches.fabricantes.get(p.fabricanteId ?? '')?.nome || 'N/A',
+        'Estoque Total': totalEstoque, 'Unidade': p.unidade,
       };
     });
-
     const csv = Papa.unparse(dataToExport);
     const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -76,23 +63,47 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
     document.body.removeChild(link);
   };
 
+  const handleClearFilters = () => {
+    setCatFiltro('');
+    setFornFiltro('');
+    setLocalFiltro('');
+    setFabFiltro('');
+    setProjetoFiltro('');
+  };
+
   return (
     <div>
-      <div className="flex justify-end mb-4">
+      <div className="flex flex-wrap gap-2 justify-end mb-4">
+        <button onClick={handleClearFilters} className="bg-gray-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-600 flex items-center">
+          <FontAwesomeIcon icon={faUndo} className="mr-2" />
+          Limpar Filtros
+        </button>
         <button onClick={handleExport} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 flex items-center">
           <FontAwesomeIcon icon={faFileCsv} className="mr-2" />
           Exportar para CSV
         </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
-          <select onChange={(e) => setProjetoFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+          <select value={projetoFiltro} onChange={(e) => setProjetoFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
               <option value="">Todos os Projetos</option>
-              {Array.from(caches.projetos.values()).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              {Array.from(caches.projetos.values()).sort((a, b) => a.nome.localeCompare(b.nome)).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
-          <select onChange={(e) => setLocalFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todas as Localidades</option>{Array.from(caches.localidades.values()).map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select>
-          <select onChange={(e) => setCatFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todas as Categorias</option>{Array.from(caches.categorias.values()).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
-          <select onChange={(e) => setFabFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todos os Fabricantes</option>{Array.from(caches.fabricantes.values()).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>
-          <select onChange={(e) => setFornFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todos os Fornecedores</option>{Array.from(caches.fornecedores.values()).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>
+          <select value={localFiltro} onChange={(e) => setLocalFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+            <option value="">Todas as Localidades</option>
+            {Array.from(caches.localidades.values()).sort((a, b) => a.nome.localeCompare(b.nome)).map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}
+          </select>
+          <select value={catFiltro} onChange={(e) => setCatFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+            <option value="">Todas as Categorias</option>
+            {Array.from(caches.categorias.values()).sort((a, b) => a.nome.localeCompare(b.nome)).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+          </select>
+          <select value={fabFiltro} onChange={(e) => setFabFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+            <option value="">Todos os Fabricantes</option>
+            {Array.from(caches.fabricantes.values()).sort((a, b) => a.nome.localeCompare(b.nome)).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+          </select>
+          <select value={fornFiltro} onChange={(e) => setFornFiltro(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+            <option value="">Todos os Fornecedores</option>
+            {Array.from(caches.fornecedores.values()).sort((a, b) => a.nome.localeCompare(b.nome)).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+          </select>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white dark:bg-gray-800 text-sm text-left text-gray-700 dark:text-gray-300">
@@ -107,7 +118,6 @@ export default function RelatorioListaEstoque({ caches }: RelatorioProps) {
               const totalEstoque = p.tipoControle === 'Serial Number'
                 ? (caches.unidadesEstoque || []).filter(u => u.produtoId === p.id && u.status === 'Em Estoque').length
                 : (caches.estoque || []).filter(e => e.produtoId === p.id).reduce((sum, e) => sum + e.quantidade, 0);
-
               return <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td className="py-3 px-4">{p.nome}</td>
                 <td className="py-3 px-4">{caches.categorias.get(p.categoriaId ?? '')?.nome || 'N/A'}</td>

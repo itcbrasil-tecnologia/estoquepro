@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Modal from './Modal';
-import { Produto, CacheData, Localidade, UnidadeEstoqueItem, HistoricoItem } from '@/types';
+import { Produto, CacheData, Localidade, UnidadeEstoqueItem, HistoricoItem, Projeto } from '@/types';
 
 interface ModalDetalhesProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ interface ModalDetalhesProps {
   caches: CacheData;
 }
 
-const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.firebasestorage.app/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
+const placeholderImage = 'https://firebasestorage.googleapis.com/v0/b/estoque-5bd20.appspot.com/o/produtos%2FNA.jpg?alt=media&token=d90a76f7-f5a6-48d5-b4bd-096b5dd0770e';
 
 export default function ModalDetalhes({ isOpen, onClose, produto, caches }: ModalDetalhesProps) {
   if (!produto) return null;
@@ -22,18 +22,19 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
   
   const unidadesPorLocal = unidadesDoProduto.reduce((acc, unidade) => {
     const local = caches.localidades.get(unidade.localidadeId);
+    const projeto = local?.projetoId ? caches.projetos.get(local.projetoId) : null;
     const localNome = local?.nome || 'Desconhecido';
     if (!acc[localNome]) {
-      acc[localNome] = { local, sns: [] };
+      acc[localNome] = { local, projeto, sns: [] };
     }
     acc[localNome].sns.push(unidade.serialNumber);
-    return acc;
-  }, {} as Record<string, { local: Localidade | undefined, sns: string[] }>);
+    return acc; // ADICIONADO: Retornar o acumulador é essencial para a função reduce
+  }, {} as Record<string, { local: Localidade | undefined, projeto: Projeto | null | undefined, sns: string[] }>);
 
   const fabricante = produto.fabricanteId ? caches.fabricantes.get(produto.fabricanteId) : null;
   const categoria = produto.categoriaId ? caches.categorias.get(produto.categoriaId) : null;
   const fornecedor = produto.fornecedorId ? caches.fornecedores.get(produto.fornecedorId) : null;
-  
+
   let documentos = [];
   try {
     documentos = produto.documentos ? JSON.parse(produto.documentos) : [];
@@ -43,15 +44,15 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
 
   const historicoDoProduto = caches.historico
     .filter(h => h.produtoId === produto.id)
-    .sort((a, b) => (b.data?.toDate() || 0) - (a.data?.toDate() || 0));
+    .sort((a, b) => (b.data?.toDate().getTime() || 0) - (a.data?.toDate().getTime() || 0));
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={produto.nome}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
-          <Image 
-            src={produto.foto_url || placeholderImage} 
-            alt={`Foto de ${produto.nome}`} 
+          <Image
+            src={produto.foto_url || placeholderImage}
+            alt={`Foto de ${produto.nome}`}
             width={400}
             height={400}
             className="rounded-lg w-full h-auto object-cover shadow-md"
@@ -64,7 +65,7 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
           <p><strong>Categoria:</strong> <span className="text-gray-800 dark:text-gray-100">{categoria?.nome || 'N/A'}</span></p>
           <p><strong>Fornecedor:</strong> <span className="text-gray-800 dark:text-gray-100">{fornecedor?.nome || 'N/A'}</span></p>
           <p><strong>Notas:</strong> <span className="text-gray-800 dark:text-gray-100">{produto.notas_internas || 'N/A'}</span></p>
-          
+
           <div className="mt-4">
             <h4 className="font-bold text-md mb-2 text-gray-800 dark:text-white">Estoque por Localidade</h4>
             <div className="space-y-2 text-sm">
@@ -72,21 +73,23 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
                 Object.entries(unidadesPorLocal).length > 0 ? Object.entries(unidadesPorLocal).map(([localNome, data]) => (
                   <div key={localNome}>
                     <div className="flex items-center">
-                        <span style={{ backgroundColor: data.local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
-                        <p className="font-semibold text-gray-700 dark:text-gray-200">{localNome} ({data.sns.length})</p>
+                      <span style={{ backgroundColor: data.projeto?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
+                      <p className="font-semibold text-gray-700 dark:text-gray-200">{localNome} ({data.sns.length})</p>
                     </div>
                     <div className="flex flex-wrap gap-1 mt-1 pl-5">
-                      {data.sns.map(sn => <span key={sn} className="text-xs font-mono bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{sn}</span>)}
+                      {/* ADICIONADO: Tipagem explícita para o parâmetro 'sn' */}
+                      {data.sns.map((sn: string) => <span key={sn} className="text-xs font-mono bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{sn}</span>)}
                     </div>
                   </div>
                 )) : <p className="text-gray-500 dark:text-gray-400">Sem estoque.</p>
               ) : (
                 estoqueDoProduto.length > 0 ? estoqueDoProduto.map(item => {
                   const local = caches.localidades.get(item.localidadeId);
+                  const projeto = local?.projetoId ? caches.projetos.get(local.projetoId) : null;
                   return (
                     <div key={item.id} className="flex justify-between items-center text-gray-800 dark:text-gray-200">
                       <div className="flex items-center">
-                        <span style={{ backgroundColor: local?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
+                        <span style={{ backgroundColor: projeto?.cor || '#ccc' }} className="w-3 h-3 rounded-full mr-2 border border-gray-300 dark:border-gray-600"></span>
                         <span>{local?.nome || 'Desconhecido'}</span>
                       </div>
                       <span className="font-semibold">{item.quantidade} {produto.unidade}</span>
@@ -100,7 +103,7 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
           <div className="mt-4">
             <h4 className="font-bold text-md mb-2 text-gray-800 dark:text-white">Documentos</h4>
             <div className="flex flex-wrap gap-2">
-              {documentos.length > 0 ? documentos.map((doc: {link: string, nome: string}, index: number) => (
+              {documentos.length > 0 ? documentos.map((doc: { link: string, nome: string }, index: number) => (
                 <a href={doc.link} key={index} target="_blank" rel="noopener noreferrer" className="bg-teal-100 text-teal-700 text-sm font-semibold px-3 py-1 rounded-full hover:bg-teal-200">{doc.nome}</a>
               )) : <p className="text-gray-500 dark:text-gray-400">Nenhum documento.</p>}
             </div>
@@ -126,20 +129,20 @@ export default function ModalDetalhes({ isOpen, onClose, produto, caches }: Moda
               </thead>
               <tbody className="divide-y dark:divide-gray-700">
                 {historicoDoProduto.map((h: HistoricoItem) => {
-                    const tipoCor = {'ENTRADA': 'text-green-500', 'SAIDA': 'text-red-500', 'TRANSFERENCIA': 'text-blue-500'}[h.tipo] || 'text-gray-400';
-                    const origem = h.localidadeOrigemId ? caches.localidades.get(h.localidadeOrigemId)?.nome : 'EXTERNO';
-                    const destino = h.localidadeDestinoId ? caches.localidades.get(h.localidadeDestinoId)?.nome : 'EXTERNO';
-                    const usuario = caches.usuarios.get(h.usuario)?.username || 'Desconhecido';
-                    return (
-                        <tr key={h.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <td className="py-3 px-4">{h.data ? h.data.toDate().toLocaleString('pt-BR') : 'N/A'}</td>
-                            <td className={`py-3 px-4 font-bold ${tipoCor}`}>{h.tipo}</td>
-                            <td className="py-3 px-4 text-right">{h.quantidade}</td>
-                            <td className="py-3 px-4">{origem}</td>
-                            <td className="py-3 px-4">{destino}</td>
-                            <td className="py-3 px-4">{usuario}</td>
-                        </tr>
-                    );
+                  const tipoCor = { 'ENTRADA': 'text-green-500', 'SAIDA': 'text-red-500', 'TRANSFERENCIA': 'text-blue-500' }[h.tipo] || 'text-gray-400';
+                  const origem = h.localidadeOrigemId ? caches.localidades.get(h.localidadeOrigemId)?.nome : 'EXTERNO';
+                  const destino = h.localidadeDestinoId ? caches.localidades.get(h.localidadeDestinoId)?.nome : 'EXTERNO';
+                  const usuario = caches.usuarios.get(h.usuario)?.username || 'Desconhecido';
+                  return (
+                    <tr key={h.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
+                      <td className="py-3 px-4">{h.data ? h.data.toDate().toLocaleString('pt-BR') : 'N/A'}</td>
+                      <td className={`py-3 px-4 font-bold ${tipoCor}`}>{h.tipo}</td>
+                      <td className="py-3 px-4 text-right">{h.quantidade}</td>
+                      <td className="py-3 px-4">{origem}</td>
+                      <td className="py-3 px-4">{destino}</td>
+                      <td className="py-3 px-4">{usuario}</td>
+                    </tr>
+                  );
                 })}
               </tbody>
             </table>

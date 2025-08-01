@@ -25,7 +25,7 @@ interface ModalAuxiliarProps {
   collectionName: string;
   title: string;
   existingItems: Item[];
-  projetos?: Map<string, Projeto>; // Prop opcional para projetos
+  projetos?: Map<string, Projeto>;
 }
 
 const initialFormData: Item = { nome: '', contato_nome: '', contato_whatsapp: '', cor: '#cccccc', projetoId: '' };
@@ -60,36 +60,36 @@ export default function ModalAuxiliar({ isOpen, onClose, itemToEdit, collectionN
         addToast("Por favor, selecione um projeto.", 'error');
         return;
     }
+
     setLoading(true);
-
     try {
-        const normalizedNewName = formData.nome.trim().toLowerCase();
-        const isDuplicate = existingItems.some(
-            (item: any) => item.nome.toLowerCase() === normalizedNewName && item.id !== itemToEdit?.id
-        );
+      const normalizedNewName = formData.nome.trim().toLowerCase();
+      const isDuplicate = existingItems.some(
+        (item: any) => item.nome.toLowerCase() === normalizedNewName && item.id !== itemToEdit?.id
+      );
 
-        if (isDuplicate) {
-            throw new Error(`Um item com o nome "${formData.nome}" já existe.`);
-        }
+      if (isDuplicate) {
+        throw new Error(`Um item com o nome "${formData.nome}" já existe.`);
+      }
 
-        const dataToSave: any = { ...formData, updatedAt: serverTimestamp() };
-        delete dataToSave.id;
+      const dataToSave: any = { ...formData, updatedAt: serverTimestamp() };
+      delete dataToSave.id;
 
-        if (itemToEdit?.id) {
-            const itemRef = doc(db, collectionName, itemToEdit.id);
-            await updateDoc(itemRef, dataToSave);
-            addToast(`${title} atualizado com sucesso!`, 'success');
-        } else {
-            dataToSave.createdAt = serverTimestamp();
-            await addDoc(collection(db, collectionName), dataToSave);
-            addToast(`${title} adicionado com sucesso!`, 'success');
-        }
-        onClose();
+      if (itemToEdit?.id) {
+        const itemRef = doc(db, collectionName, itemToEdit.id);
+        await updateDoc(itemRef, dataToSave);
+        addToast(`${title} atualizado com sucesso!`, 'success');
+      } else {
+        dataToSave.createdAt = serverTimestamp();
+        await addDoc(collection(db, collectionName), dataToSave);
+        addToast(`${title} adicionado com sucesso!`, 'success');
+      }
+      onClose();
     } catch (error: any) {
-        console.error(`Erro ao salvar ${collectionName}:`, error);
-        addToast(error.message || `Falha ao salvar ${title}.`, 'error');
+      console.error(`Erro ao salvar ${collectionName}:`, error);
+      addToast(error.message || `Falha ao salvar ${title}.`, 'error');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -99,39 +99,54 @@ export default function ModalAuxiliar({ isOpen, onClose, itemToEdit, collectionN
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
-            <input type="text" name="nome" value={formData.nome || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
+            <input type="text" name="nome" value={formData.nome || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
           </div>
+
           {collectionName === 'fornecedores' && (
             <>
-              {/* ... campos de fornecedor ... */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome do Contato</label>
+                <input type="text" name="contato_nome" value={formData.contato_nome || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">WhatsApp</label>
+                <input type="text" name="contato_whatsapp" value={formData.contato_whatsapp || ''} onChange={handleChange} placeholder="(XX) XXXXX-XXXX" className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              </div>
             </>
           )}
+
           {collectionName === 'localidades' && (
             <>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Projeto</label>
-                    <select name="projetoId" value={formData.projetoId || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        <option value="">Selecione um Projeto...</option>
-                        {projetos && Array.from(projetos.values()).map(p => (
-                            <option key={p.id} value={p.id}>{p.nome}</option>
-                        ))}
-                    </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Projeto</label>
+                <select name="projetoId" value={formData.projetoId || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                  <option value="">Selecione um Projeto...</option>
+                  {projetos && Array.from(projetos.values()).map(p => (
+                    <option key={p.id} value={p.id}>{p.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+          
+          {collectionName === 'projetos' && (
+            <>
+               <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cor do Projeto</label>
+                <div className="flex items-center mt-1 space-x-2">
+                  <input type="color" name="cor" value={formData.cor || '#cccccc'} onChange={handleChange} className="w-12 h-10 p-1 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600" />
+                  <input type="text" name="cor" value={formData.cor || '#cccccc'} onChange={handleChange} placeholder="#RRGGBB" className="block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cor da Localidade</label>
-                    <div className="flex items-center mt-1 space-x-2">
-                        <input type="color" name="cor" value={formData.cor || '#cccccc'} onChange={handleChange} className="w-12 h-10 p-1 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600"/>
-                        <input type="text" name="cor" value={formData.cor || '#cccccc'} onChange={handleChange} placeholder="#RRGGBB" className="block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
-                    </div>
-                </div>
+              </div>
             </>
           )}
         </div>
+
         <div className="flex justify-end mt-8 items-center gap-x-4">
-            <button type="button" onClick={onClose} className="bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 font-bold py-2 px-6 rounded-lg">Cancelar</button>
-            <button type="submit" disabled={loading} className="btn-save w-28">
-              {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Salvar'}
-            </button>
+          <button type="button" onClick={onClose} className="bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 font-bold py-2 px-6 rounded-lg">Cancelar</button>
+          <button type="submit" disabled={loading} className="btn-save w-28">
+            {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Salvar'}
+          </button>
         </div>
       </form>
     </Modal>

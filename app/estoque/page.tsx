@@ -227,15 +227,24 @@ export default function PaginaEstoque() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria</label>
-              <select onChange={(e) => setFiltroCategoria(e.target.value)} className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todas</option>{Array.from(caches.categorias.values()).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+              <select onChange={(e) => setFiltroCategoria(e.target.value)} className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Todas</option>
+                {Array.from(caches.categorias.values()).sort((a, b) => a.nome.localeCompare(b.nome)).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fornecedor</label>
-              <select onChange={(e) => setFiltroFornecedor(e.target.value)} className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todos</option>{Array.from(caches.fornecedores.values()).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select>
+              <select onChange={(e) => setFiltroFornecedor(e.target.value)} className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Todos</option>
+                {Array.from(caches.fornecedores.values()).sort((a, b) => a.nome.localeCompare(b.nome)).map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Localidade</label>
-              <select onChange={(e) => setFiltroLocalidade(e.target.value)} className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"><option value="">Todas</option>{Array.from(caches.localidades.values()).map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select>
+              <select onChange={(e) => setFiltroLocalidade(e.target.value)} className="p-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Todas</option>
+                {Array.from(caches.localidades.values()).sort((a, b) => a.nome.localeCompare(b.nome)).map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}
+              </select>
             </div>
             <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar Produto</label>

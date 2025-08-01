@@ -21,7 +21,7 @@ export default function PaginaProjetos() {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'projetos'), (snapshot) => {
       const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Projeto))
-        .sort((a, b) => a.nome.localeCompare(b.nome)); // Ordena alfabeticamente
+        .sort((a, b) => a.nome.localeCompare(b.nome)); 
       setItems(lista);
       setLoading(false);
     });
@@ -50,15 +50,22 @@ export default function PaginaProjetos() {
     <div>
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Projetos</h1>
-        <button onClick={() => handleOpenModal()} className="btn-primary self-start sm:self-auto">
-            <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Projeto
+        <button onClick={() => handleOpenModal(null)} className="btn-primary self-start sm:self-auto">
+          <FontAwesomeIcon icon={faPlus} className="mr-2" />Adicionar Projeto
         </button>
       </header>
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {items.map(item => (
             <li key={item.id} className="p-4 flex justify-between items-center">
-              <span className="font-medium text-gray-800 dark:text-gray-200">{item.nome}</span>
+              <div className="flex items-center">
+                <span 
+                  style={{ backgroundColor: item.cor || '#ccc' }} 
+                  className="w-4 h-4 rounded-full mr-3 border border-gray-300 dark:border-gray-600"
+                ></span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{item.nome}</span>
+              </div>
               <div className="space-x-4">
                 <button onClick={() => handleOpenModal(item)} className="text-yellow-600 hover:text-yellow-500"><FontAwesomeIcon icon={faEdit} /></button>
                 <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-500"><FontAwesomeIcon icon={faTrash} /></button>
@@ -67,6 +74,7 @@ export default function PaginaProjetos() {
           ))}
         </ul>
       </div>
+
       <ModalAuxiliar isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} itemToEdit={itemEmEdicao} collectionName="projetos" title="Projeto" existingItems={items} />
     </div>
   );

@@ -25,7 +25,7 @@ const initialFormData: Omit<Produto, 'id' | 'createdAt' | 'updatedAt'> = {
   unidade: '',
   descricao: '',
   foto_url: '',
-  serialNumber: '', // Este campo parece ser legado ou para um ID geral, não para as unidades. Manterei por consistência.
+  serialNumber: '',
   modelo: '',
   categoriaId: '',
   fabricanteId: '',
@@ -135,13 +135,11 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
 
     try {
       if (produtoToEdit?.id) {
-        // EDITAR PRODUTO EXISTENTE
         const produtoRef = doc(db, "produtos", produtoToEdit.id);
         await updateDoc(produtoRef, dataToSave);
         await logAction('PRODUTO_EDITADO', { id: produtoToEdit.id, nome: dataToSave.nome });
         addToast('Produto atualizado com sucesso!', 'success');
       } else {
-        // CRIAR NOVO PRODUTO
         dataToSave.createdAt = serverTimestamp();
         const formElements = e.currentTarget.elements as any;
         const localInicialId = formElements.localidade_inicial.value;
@@ -174,19 +172,19 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
             });
             await logAction('MOVIMENTACAO_ESTOQUE', { tipo: 'ENTRADA', quantidade: qtdInicial, produto: dataToSave.nome });
           }
-        } else { // Serial Number
+        } else { 
           const snsValidos = initialSerialNumbers.filter(sn => sn && sn.trim().length > 0);
           if (snsValidos.length > 0) {
             if (!localInicialId) throw new Error("Selecione uma localidade para o estoque inicial.");
             const localInicialData = caches.localidades.get(localInicialId);
 
             snsValidos.forEach(sn => {
-              const unidadeRef = doc(collection(db, "unidadesEstoque")); // CORRIGIDO
+              const unidadeRef = doc(collection(db, "unidadesEstoque"));
               batch.set(unidadeRef, {
-                produtoId: produtoRef.id, // CORRIGIDO
+                produtoId: produtoRef.id,
                 serialNumber: sn.trim(),
                 localidadeId: localInicialId,
-                projetoId: localInicialData?.projetoId || '', // ADICIONADO
+                projetoId: localInicialData?.projetoId || '', 
                 status: 'Em Estoque',
                 createdAt: serverTimestamp()
               });
@@ -194,11 +192,11 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
 
             const histRef = doc(collection(db, "historico"));
             batch.set(histRef, {
-              produtoId: produtoRef.id, // CORRIGIDO
+              produtoId: produtoRef.id,
               tipo: 'ENTRADA',
               quantidade: snsValidos.length,
               serialNumbers: snsValidos,
-              localidadeDestinoId: localInicialId, // CORRIGIDO
+              localidadeDestinoId: localInicialId,
               data: serverTimestamp(),
               usuario: auth.currentUser?.uid
             });
@@ -219,25 +217,27 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
     }
   };
 
-  const popularSelect = (cache: Map<string, { nome: string }>, placeholder: string) => {
+  const popularSelect = (cache: Map<string, { id?: string, nome: string }>, placeholder: string) => {
     if (!cache) return [<option key="" value="">{placeholder}</option>];
-    const options = [<option key="" value="">{placeholder}</option>];
-    Array.from(cache.entries()).forEach(([id, item]) => {
-      options.push(<option key={id} value={id}>{item.nome}</option>);
-    });
-    return options;
+    
+    const sortedItems = Array.from(cache.entries()).sort(([, a], [, b]) => a.nome.localeCompare(b.nome));
+
+    return [
+      <option key="" value="">{placeholder}</option>,
+      ...sortedItems.map(([id, item]) => (
+        <option key={id} value={id}>{item.nome}</option>
+      ))
+    ];
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={produtoToEdit ? "Editar Produto" : "Adicionar Novo Produto"}>
       <form onSubmit={handleSave} className="space-y-4">
-        {/* Bloco 1: Informações Gerais */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
             <input type="text" name="nome" value={formData.nome || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
           </div>
-
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Controle</label>
             <div className="mt-2 flex gap-x-6">
@@ -251,12 +251,10 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
               </label>
             </div>
           </div>
-
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
             <textarea name="descricao" value={formData.descricao || ''} onChange={handleChange} rows={2} className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
           </div>
-
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">URL da Foto</label>
             <div className="flex items-center space-x-2 mt-1">
@@ -272,7 +270,6 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
               </div>
             )}
           </div>
-          
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Unidade</label>
             <input type="text" name="unidade" value={formData.unidade || ''} onChange={handleChange} required className="mt-1 block w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
@@ -303,7 +300,6 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
           </div>
         </div>
         
-        {/* Bloco 2: Documentos */}
         <div className="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center mb-2">
             <p className="text-sm font-bold text-gray-600 dark:text-gray-300">Documentos</p>
@@ -320,7 +316,6 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
           </div>
         </div>
         
-        {/* Bloco 3: Estoque Inicial */}
         {!produtoToEdit && (
           <div className="border-t pt-4 mt-4 border-gray-200 dark:border-gray-700">
             <p className="text-sm font-bold text-gray-600 dark:text-gray-300">Estoque Inicial (Opcional)</p>
@@ -344,7 +339,6 @@ export default function ModalProduto({ isOpen, onClose, produtoToEdit, caches, o
           </div>
         )}
         
-        {/* Bloco 4: Ações */}
         <div className="flex justify-between items-center mt-8">
           <div>
             {produtoToEdit && (

@@ -1,4 +1,4 @@
-import { FieldValue, Timestamp } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 
 export interface Produto {
   id: string;
@@ -19,39 +19,69 @@ export interface Produto {
   updatedAt?: Timestamp;
 }
 
-export interface EstoqueItem { 
-  id: string; 
-  produtoId: string; 
-  quantidade: number; 
-  localidadeId: string; 
+export interface EstoqueItem {
+  id: string;
+  produtoId: string;
+  quantidade: number;
+  localidadeId: string;
 }
 
 export interface UnidadeEstoqueItem {
-    id: string;
-    produtoId: string;
-    serialNumber: string;
-    localidadeId: string;
-    projetoId?: string;
-    status: 'Em Estoque' | 'Alocado' | 'Em Manutenção' | 'Baixado';
-    createdAt?: Timestamp;
+  id: string;
+  produtoId: string;
+  serialNumber: string;
+  localidadeId: string;
+  projetoId?: string;
+  status: 'Em Estoque' | 'Alocado' | 'Em Manutenção' | 'Baixado';
+  createdAt?: Timestamp;
 }
 
-export interface Localidade { id: string; nome: string; cor?: string; projetoId?: string; }
-export interface Fabricante { id: string; nome: string; }
-export interface Categoria { id: string; nome: string; }
-export interface Fornecedor { id: string; nome: string; contato_nome?: string; contato_whatsapp?: string; }
-export interface Usuario { id: string; username: string; email: string; role: string; }
-export interface Projeto { id: string; nome: string; }
-export interface HistoricoItem { 
-  id: string; 
-  produtoId: string; 
-  tipo: string; 
-  quantidade: number; 
+export interface Localidade {
+  id: string;
+  nome: string;
+  projetoId?: string;
+}
+
+export interface Fabricante {
+  id: string;
+  nome: string;
+}
+
+export interface Categoria {
+  id: string;
+  nome: string;
+}
+
+export interface Fornecedor {
+  id: string;
+  nome: string;
+  contato_nome?: string;
+  contato_whatsapp?: string;
+}
+
+export interface Usuario {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+}
+
+export interface Projeto {
+  id: string;
+  nome: string;
+  cor?: string; 
+}
+
+export interface HistoricoItem {
+  id: string;
+  produtoId: string;
+  tipo: string;
+  quantidade: number;
   serialNumbers?: string[];
-  localidadeOrigemId?: string; 
-  localidadeDestinoId?: string; 
-  data: any; 
-  usuario: string; 
+  localidadeOrigemId?: string;
+  localidadeDestinoId?: string;
+  data: Timestamp;
+  usuario: string;
 }
 
 export interface AuditLogItem {
@@ -60,18 +90,18 @@ export interface AuditLogItem {
   details: any;
   userEmail: string;
   userId: string;
-  timestamp: any;
+  timestamp: Timestamp;
 }
 
 export interface CacheData {
-    produtos: Map<string, Produto>;
-    estoque: EstoqueItem[];
-    unidadesEstoque: UnidadeEstoqueItem[];
-    localidades: Map<string, Localidade>;
-    fabricantes: Map<string, Fabricante>;
-    categorias: Map<string, Categoria>;
-    fornecedores: Map<string, Fornecedor>;
-    usuarios: Map<string, Usuario>;
-    historico: HistoricoItem[];
-    projetos: Map<string, Projeto>;
+  produtos: Map<string, Produto>;
+  estoque: EstoqueItem[];
+  unidadesEstoque: UnidadeEstoqueItem[];
+  localidades: Map<string, Localidade>;
+  fabricantes: Map<string, Fabricante>;
+  categorias: Map<string, Categoria>;
+  fornecedores: Map<string, Fornecedor>;
+  usuarios: Map<string, Usuario>;
+  historico: HistoricoItem[];
+  projetos: Map<string, Projeto>;
 }
