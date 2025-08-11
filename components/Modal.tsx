@@ -23,7 +23,8 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             <FontAwesomeIcon icon={faXmark} size="lg" />
           </button>
         </div>
-        <div className="p-8 overflow-y-auto">
+        {/* CORREÇÃO APLICADA AQUI: Adicionado text-gray-800 e dark:text-gray-200 */}
+        <div className="p-6 md:p-8 overflow-y-auto text-gray-800 dark:text-gray-200">
           {children}
         </div>
       </div>
