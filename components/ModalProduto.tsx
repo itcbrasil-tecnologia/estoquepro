@@ -41,13 +41,6 @@ const initialFormData: Omit<Produto, "id" | "createdAt" | "updatedAt"> = {
   tipoControle: "Quantidade",
 };
 
-const sanitizeFilename = (name: string) => {
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-.]/g, "");
-};
-
 export default function ModalProduto({
   isOpen,
   onClose,
@@ -112,9 +105,10 @@ export default function ModalProduto({
     const file = e.target.files?.[0];
     if (!file || !formData.nome) return;
     setIsUploading(true);
-    setUploadProgress(0);
-    const sanitizedName = sanitizeFilename(formData.nome);
-    const storageRef = ref(storage, `produtos/${sanitizedName}-${Date.now()}`);
+    const storageRef = ref(
+      storage,
+      `produtos/${formData.nome.toLowerCase()}-${Date.now()}`
+    );
     const uploadTask = uploadBytesResumable(storageRef, file);
     uploadTask.on(
       "state_changed",
@@ -127,7 +121,6 @@ export default function ModalProduto({
         getDownloadURL(uploadTask.snapshot.ref).then((url) => {
           setFormData((prev) => ({ ...prev, foto_url: url }));
           setIsUploading(false);
-          addToast("Imagem carregada!", "success");
         })
     );
   };
@@ -136,6 +129,14 @@ export default function ModalProduto({
     e.preventDefault();
     if (!auth.currentUser) return;
     setLoading(true);
+
+    // Preparação dos dados fora da transação
+    const formElements = e.currentTarget.elements as any;
+    const qtdInicial =
+      formData.tipoControle === "Quantidade"
+        ? parseFloat(formElements.quantidade_inicial?.value) || 0
+        : 0;
+    const snsValidos = initialSerialNumbers.filter((s) => s.trim());
 
     const dataToSave: any = {
       ...formData,
@@ -147,9 +148,9 @@ export default function ModalProduto({
       await runTransaction(db, async (transaction) => {
         const localId = localPadrao?.id;
         if (!localId && !produtoToEdit)
-          throw new Error("Local 'ITC BRASIL' não configurado.");
+          throw new Error("Local padrão 'ITC BRASIL' não encontrado.");
 
-        // 1. DEFINIÇÃO DAS REFERÊNCIAS
+        // 1. GERAR REFERÊNCIAS
         const produtoRef = produtoToEdit?.id
           ? doc(db, "produtos", produtoToEdit.id)
           : doc(collection(db, "produtos"));
@@ -159,62 +160,56 @@ export default function ModalProduto({
           : null;
         const histRef = doc(collection(db, "historico"));
 
-        // 2. FASE DE LEITURA (READS) - OBRIGATÓRIO SER PRIMEIRO
-
+        // 2. FASE ÚNICA DE LEITURA (READS) - OBRIGATÓRIO SER NO INÍCIO
         await transaction.get(produtoRef);
         if (estoqueRef) {
           await transaction.get(estoqueRef);
         }
 
-        // 3. FASE DE ESCRITA (WRITES)
+        // 3. FASE ÚNICA DE ESCRITA (WRITES)
         if (produtoToEdit) {
           transaction.update(produtoRef, dataToSave);
         } else {
           dataToSave.createdAt = serverTimestamp();
           transaction.set(produtoRef, dataToSave);
 
-          // Entrada inicial
+          // Estoque Inicial
           if (formData.tipoControle === "Quantidade") {
-            const formElements = e.currentTarget.elements as any;
-            const qtd = parseFloat(formElements.quantidade_inicial?.value) || 0;
-            if (qtd > 0 && estoqueRef) {
+            if (qtdInicial > 0 && estoqueRef) {
               transaction.set(estoqueRef, {
                 produtoId: produtoRef.id,
                 localidadeId: localId,
-                quantidade: qtd,
+                quantidade: qtdInicial,
               });
               transaction.set(histRef, {
                 produtoId: produtoRef.id,
                 tipo: "ENTRADA",
-                quantidade: qtd,
+                quantidade: qtdInicial,
                 localidadeDestinoId: localId,
                 data: serverTimestamp(),
                 usuario: auth.currentUser?.uid,
               });
             }
-          } else {
-            const sns = initialSerialNumbers.filter((s) => s.trim());
-            if (sns.length > 0 && localId) {
-              sns.forEach((sn) => {
-                const uniRef = doc(collection(db, "unidadesEstoque"));
-                transaction.set(uniRef, {
-                  produtoId: produtoRef.id,
-                  serialNumber: sn.trim(),
-                  localidadeId: localId,
-                  status: "Em Estoque",
-                  createdAt: serverTimestamp(),
-                });
-              });
-              transaction.set(histRef, {
+          } else if (snsValidos.length > 0 && localId) {
+            snsValidos.forEach((sn) => {
+              const uniRef = doc(collection(db, "unidadesEstoque"));
+              transaction.set(uniRef, {
                 produtoId: produtoRef.id,
-                tipo: "ENTRADA",
-                quantidade: sns.length,
-                serialNumbers: sns,
-                localidadeDestinoId: localId,
-                data: serverTimestamp(),
-                usuario: auth.currentUser?.uid,
+                serialNumber: sn.trim(),
+                localidadeId: localId,
+                status: "Em Estoque",
+                createdAt: serverTimestamp(),
               });
-            }
+            });
+            transaction.set(histRef, {
+              produtoId: produtoRef.id,
+              tipo: "ENTRADA",
+              quantidade: snsValidos.length,
+              serialNumbers: snsValidos,
+              localidadeDestinoId: localId,
+              data: serverTimestamp(),
+              usuario: auth.currentUser?.uid,
+            });
           }
         }
       });
@@ -228,11 +223,8 @@ export default function ModalProduto({
       );
       onClose();
     } catch (error: any) {
-      console.error("Erro no salvamento:", error);
-      addToast(
-        error.message || "Erro de transação no banco de dados.",
-        "error"
-      );
+      console.error("Erro na transação:", error);
+      addToast(error.message || "Erro ao salvar produto.", "error");
     } finally {
       setLoading(false);
     }
@@ -308,18 +300,17 @@ export default function ModalProduto({
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium">
-              Foto (URL ou Upload)
-            </label>
+            <label className="block text-sm font-medium">Foto do Produto</label>
             <div className="flex gap-2 mt-1">
               <input
                 type="text"
                 name="foto_url"
                 value={formData.foto_url}
                 onChange={handleChange}
+                placeholder="URL da imagem..."
                 className="flex-grow p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:text-white"
               />
-              <label className="cursor-pointer bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg text-sm font-semibold">
+              <label className="cursor-pointer bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg text-sm font-semibold flex items-center">
                 Upload...
                 <input
                   type="file"
@@ -346,6 +337,7 @@ export default function ModalProduto({
               value={formData.unidade}
               onChange={handleChange}
               required
+              placeholder="Ex: Un, Kg, Pç"
               className="w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700"
             />
           </div>
@@ -437,7 +429,7 @@ export default function ModalProduto({
                   d[i].nome = e.target.value;
                   setDocumentos(d);
                 }}
-                placeholder="Nome"
+                placeholder="Ex: Manual"
                 className="w-1/3 p-2 border rounded text-xs dark:bg-gray-700"
               />
               <input
@@ -448,7 +440,7 @@ export default function ModalProduto({
                   d[i].link = e.target.value;
                   setDocumentos(d);
                 }}
-                placeholder="Link"
+                placeholder="Link do arquivo..."
                 className="flex-grow p-2 border rounded text-xs dark:bg-gray-700"
               />
               <button
@@ -465,7 +457,7 @@ export default function ModalProduto({
         </div>
 
         {!produtoToEdit && (
-          <div className="border-t pt-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg dark:border-gray-700">
+          <div className="border-t pt-4 bg-gray-100 dark:bg-gray-800/50 p-4 rounded-lg dark:border-gray-700">
             <p className="text-sm font-bold mb-3 text-teal-700 dark:text-teal-400">
               Entrada Inicial (ITC BRASIL)
             </p>
@@ -474,7 +466,7 @@ export default function ModalProduto({
                 type="number"
                 name="quantidade_inicial"
                 step="any"
-                placeholder="Quantidade inicial..."
+                placeholder="Digite a quantidade inicial..."
                 className="w-full p-2 border border-gray-400 rounded-lg dark:bg-gray-700"
               />
             ) : (
