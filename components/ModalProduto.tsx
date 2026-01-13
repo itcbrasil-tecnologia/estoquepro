@@ -113,10 +113,8 @@ export default function ModalProduto({
     if (!file || !formData.nome) return;
     setIsUploading(true);
     setUploadProgress(0);
-    const storageRef = ref(
-      storage,
-      `produtos/${sanitizeFilename(formData.nome)}-${Date.now()}`
-    );
+    const sanitizedName = sanitizeFilename(formData.nome);
+    const storageRef = ref(storage, `produtos/${sanitizedName}-${Date.now()}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
     uploadTask.on(
       "state_changed",
@@ -136,7 +134,9 @@ export default function ModalProduto({
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!auth.currentUser) return;
     setLoading(true);
+
     const dataToSave: any = {
       ...formData,
       documentos: JSON.stringify(documentos),
@@ -146,19 +146,24 @@ export default function ModalProduto({
     try {
       await runTransaction(db, async (transaction) => {
         const localId = localPadrao?.id;
+        if (!localId && !produtoToEdit)
+          throw new Error("Local 'ITC BRASIL' não configurado.");
+
+        // Definimos as referências ANTES de qualquer operação
         const produtoRef = produtoToEdit?.id
           ? doc(db, "produtos", produtoToEdit.id)
           : doc(collection(db, "produtos"));
         const estoqueRef = localId
           ? doc(db, "estoque", `${produtoRef.id}_${localId}`)
           : null;
+        const histRef = doc(collection(db, "historico"));
 
         // --- 1. FASE DE LEITURA (READS) ---
-        // Essencial ler as referências ANTES de qualquer transação de escrita para satisfazer o Firestore.
+        // É obrigatório ler os documentos que serão afetados, mesmo em criações.
+        await transaction.get(produtoRef);
         if (estoqueRef) {
           await transaction.get(estoqueRef);
         }
-        await transaction.get(produtoRef);
 
         // --- 2. FASE DE ESCRITA (WRITES) ---
         if (produtoToEdit) {
@@ -167,6 +172,7 @@ export default function ModalProduto({
           dataToSave.createdAt = serverTimestamp();
           transaction.set(produtoRef, dataToSave);
 
+          // Entrada inicial
           if (formData.tipoControle === "Quantidade") {
             const formElements = e.currentTarget.elements as any;
             const qtd = parseFloat(formElements.quantidade_inicial?.value) || 0;
@@ -176,7 +182,7 @@ export default function ModalProduto({
                 localidadeId: localId,
                 quantidade: qtd,
               });
-              transaction.set(doc(collection(db, "historico")), {
+              transaction.set(histRef, {
                 produtoId: produtoRef.id,
                 tipo: "ENTRADA",
                 quantidade: qtd,
@@ -189,7 +195,8 @@ export default function ModalProduto({
             const sns = initialSerialNumbers.filter((s) => s.trim());
             if (sns.length > 0 && localId) {
               sns.forEach((sn) => {
-                transaction.set(doc(collection(db, "unidadesEstoque")), {
+                const uniRef = doc(collection(db, "unidadesEstoque"));
+                transaction.set(uniRef, {
                   produtoId: produtoRef.id,
                   serialNumber: sn.trim(),
                   localidadeId: localId,
@@ -197,7 +204,7 @@ export default function ModalProduto({
                   createdAt: serverTimestamp(),
                 });
               });
-              transaction.set(doc(collection(db, "historico")), {
+              transaction.set(histRef, {
                 produtoId: produtoRef.id,
                 tipo: "ENTRADA",
                 quantidade: sns.length,
@@ -220,11 +227,8 @@ export default function ModalProduto({
       );
       onClose();
     } catch (error: any) {
-      console.error("Erro ao salvar produto:", error);
-      addToast(
-        error.message || "Erro de transação no banco de dados.",
-        "error"
-      );
+      console.error("Erro no Firestore:", error);
+      addToast(error.message || "Erro ao salvar no banco de dados.", "error");
     } finally {
       setLoading(false);
     }
@@ -416,7 +420,7 @@ export default function ModalProduto({
               }
               className="text-xs bg-teal-100 text-teal-700 font-bold py-1 px-3 rounded hover:bg-teal-200"
             >
-              <FontAwesomeIcon icon={faPlus} className="mr-1" /> Adicionar
+              Adicionar
             </button>
           </div>
           {documentos.map((doc, i) => (
@@ -457,7 +461,7 @@ export default function ModalProduto({
         </div>
 
         {!produtoToEdit && (
-          <div className="border-t pt-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg dark:border-gray-700">
+          <div className="border-t pt-4 bg-gray-100 dark:bg-gray-800/50 p-4 rounded-lg dark:border-gray-700">
             <p className="text-sm font-bold mb-3 text-teal-700 dark:text-teal-400">
               Entrada Inicial (ITC BRASIL)
             </p>
@@ -478,30 +482,38 @@ export default function ModalProduto({
           </div>
         )}
 
-        <div className="flex justify-end gap-4 mt-8 pt-4 border-t dark:border-gray-700">
-          {produtoToEdit && (
+        <div className="flex justify-between items-center mt-8 pt-4 border-t dark:border-gray-700">
+          {produtoToEdit ? (
             <button
               type="button"
               onClick={() => onDelete(produtoToEdit.id)}
-              className="mr-auto bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 flex items-center gap-2"
+              className="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 flex items-center gap-2"
             >
               <FontAwesomeIcon icon={faTrash} /> Excluir
             </button>
+          ) : (
+            <div />
           )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-8 py-2 bg-teal-600 text-white rounded-lg font-bold disabled:opacity-50 min-w-[120px]"
-          >
-            {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : "Confirmar"}
-          </button>
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg font-bold"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-8 py-2 bg-teal-600 text-white rounded-lg font-bold disabled:opacity-50 min-w-[120px]"
+            >
+              {loading ? (
+                <FontAwesomeIcon icon={faSpinner} spin />
+              ) : (
+                "Confirmar"
+              )}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>
