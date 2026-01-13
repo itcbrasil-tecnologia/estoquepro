@@ -149,23 +149,24 @@ export default function ModalProduto({
         if (!localId && !produtoToEdit)
           throw new Error("Local 'ITC BRASIL' não configurado.");
 
-        // Definimos as referências ANTES de qualquer operação
+        // 1. DEFINIÇÃO DAS REFERÊNCIAS
         const produtoRef = produtoToEdit?.id
           ? doc(db, "produtos", produtoToEdit.id)
           : doc(collection(db, "produtos"));
+
         const estoqueRef = localId
           ? doc(db, "estoque", `${produtoRef.id}_${localId}`)
           : null;
         const histRef = doc(collection(db, "historico"));
 
-        // --- 1. FASE DE LEITURA (READS) ---
-        // É obrigatório ler os documentos que serão afetados, mesmo em criações.
+        // 2. FASE DE LEITURA (READS) - OBRIGATÓRIO SER PRIMEIRO
+
         await transaction.get(produtoRef);
         if (estoqueRef) {
           await transaction.get(estoqueRef);
         }
 
-        // --- 2. FASE DE ESCRITA (WRITES) ---
+        // 3. FASE DE ESCRITA (WRITES)
         if (produtoToEdit) {
           transaction.update(produtoRef, dataToSave);
         } else {
@@ -227,8 +228,11 @@ export default function ModalProduto({
       );
       onClose();
     } catch (error: any) {
-      console.error("Erro no Firestore:", error);
-      addToast(error.message || "Erro ao salvar no banco de dados.", "error");
+      console.error("Erro no salvamento:", error);
+      addToast(
+        error.message || "Erro de transação no banco de dados.",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -316,7 +320,7 @@ export default function ModalProduto({
                 className="flex-grow p-2 border border-gray-400 rounded-lg dark:bg-gray-700 dark:text-white"
               />
               <label className="cursor-pointer bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg text-sm font-semibold">
-                Escolher...
+                Upload...
                 <input
                   type="file"
                   onChange={handleImageUpload}
@@ -420,7 +424,7 @@ export default function ModalProduto({
               }
               className="text-xs bg-teal-100 text-teal-700 font-bold py-1 px-3 rounded hover:bg-teal-200"
             >
-              Adicionar
+              <FontAwesomeIcon icon={faPlus} className="mr-1" /> Adicionar
             </button>
           </div>
           {documentos.map((doc, i) => (
@@ -461,7 +465,7 @@ export default function ModalProduto({
         </div>
 
         {!produtoToEdit && (
-          <div className="border-t pt-4 bg-gray-100 dark:bg-gray-800/50 p-4 rounded-lg dark:border-gray-700">
+          <div className="border-t pt-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg dark:border-gray-700">
             <p className="text-sm font-bold mb-3 text-teal-700 dark:text-teal-400">
               Entrada Inicial (ITC BRASIL)
             </p>
